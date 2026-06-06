@@ -1,6 +1,6 @@
 # BeSpoked Bikes — Sales Tracking Application
 
-A full-stack sales tracking app for BeSpoked, a high-end bicycle shop. Tracks salesperson commissions, product inventory, customer records, and quarterly bonuses.
+A full-stack sales tracking app for BeSpoked, a high-end bicycle shop. Tracks salesperson commissions, product inventory, customer records, discounts, and quarterly bonuses.
 
 ## Tech Stack
 
@@ -9,7 +9,7 @@ A full-stack sales tracking app for BeSpoked, a high-end bicycle shop. Tracks sa
 | Backend | .NET 8 Web API (C#) |
 | ORM | Entity Framework Core 8 (Code-First) |
 | Database | SQL Server (LocalDB for dev) |
-| Frontend | React 18 + React Router 6 |
+| Frontend | React 18 + TypeScript + React Router 6 |
 | Architecture | 3-tier: Core → Infrastructure → API |
 
 ---
@@ -26,18 +26,22 @@ BeSpoked/
 │   │   ├── Data/AppDbContext.cs  # DbContext with fluent config + seed data
 │   │   └── Repositories/        # Generic + Sale-specific repositories
 │   └── BeSpoked.API/             # ASP.NET Web API controllers
-│       ├── Controllers/          # Salespersons, Products, Customers, Sales
+│       ├── Controllers/          # Salespersons, Products, Customers, Sales, Discounts
+│       ├── DTOs/                 # Response record types
+│       ├── Settings/             # QuarterlyBonusSettings (appsettings.json binding)
 │       └── Program.cs            # DI, CORS, EF migration on startup
 └── frontend/
     └── src/
-        ├── services/api.js       # All API calls in one place
+        ├── types.ts              # Shared TypeScript interfaces matching backend DTOs
+        ├── services/api.ts       # All API calls in one place
         ├── components/
-        │   ├── Salespersons/     # List + edit modal
+        │   ├── Salespersons/     # List + create/edit modal
         │   ├── Products/         # List + edit modal
-        │   ├── Customers/        # List
+        │   ├── Customers/        # List + create modal
+        │   ├── Discounts/        # List + create/edit/delete modal
         │   ├── Sales/            # List with date filter + Create form
         │   └── Reports/          # Quarterly commission report
-        └── App.js                # Router + nav
+        └── App.tsx               # Router + nav
 ```
 
 ---
@@ -107,8 +111,21 @@ When creating a sale, the API queries the `Discounts` table for any active disco
 ### 6. Commission Computation
 `FinalPrice` and `Commission` are computed C# properties on the `Sale` entity, marked as `[NotMapped]` via EF's `Ignore()`. Calculated from stored values — no magic numbers in the DB.
 
-### 7. Quarterly Bonus
-The top-earning salesperson per quarter receives a 10% bonus on their total commission. Calculated server-side in the report endpoint and flagged in the JSON response.
+### 7. Configurable Quarterly Bonus
+Bonus rules are driven by `appsettings.json` — no hardcoded values in the controller:
+
+```json
+"QuarterlyBonus": {
+  "TopN": 1,
+  "BonusPercentage": 10.0
+}
+```
+
+- `TopN` — how many top earners receive the bonus
+- `BonusPercentage` — bonus as a percentage of the earner's total commission
+
+### 8. Terminated Salesperson Validation
+Rejected at both layers: the frontend filters terminated salespersons out of the dropdown, and the API returns `400 Bad Request` if a terminated salesperson's ID is submitted directly.
 
 ---
 
@@ -117,10 +134,17 @@ The top-earning salesperson per quarter receives a 10% bonus on their total comm
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | GET | `/api/salespersons` | List all salespersons |
+| POST | `/api/salespersons` | Create a salesperson |
 | PUT | `/api/salespersons/{id}` | Update a salesperson |
 | GET | `/api/products` | List all products |
+| POST | `/api/products` | Create a product |
 | PUT | `/api/products/{id}` | Update a product |
 | GET | `/api/customers` | List all customers |
+| POST | `/api/customers` | Create a customer |
+| GET | `/api/discounts` | List all discounts |
+| POST | `/api/discounts` | Create a discount |
+| PUT | `/api/discounts/{id}` | Update a discount |
+| DELETE | `/api/discounts/{id}` | Delete a discount |
 | GET | `/api/sales?from=&to=` | List sales, optional date filter |
 | POST | `/api/sales` | Create a sale |
 | GET | `/api/sales/report?year=&quarter=` | Quarterly commission report |
