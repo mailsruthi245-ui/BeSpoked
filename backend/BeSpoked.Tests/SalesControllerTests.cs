@@ -1,0 +1,137 @@
+using BeSpoked.API.Controllers;
+using BeSpoked.API.Services;
+using BeSpoked.API.Settings;
+using BeSpoked.Core.Entities;
+using BeSpoked.Core.Interfaces;
+using BeSpoked.Infrastructure.Data;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Moq;
+using Xunit;
+
+namespace BeSpoked.Tests;
+
+public class SalesControllerTests
+{
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private static AppDbContext CreateContext() =>
+        new(new DbContextOptionsBuilder<AppDbContext>()
+            .UseInMemoryDatabase(Guid.NewGuid().ToString())
+            .Options);
+
+    private static SalesController CreateController(
+        AppDbContext context,
+        IRepository<Product>? productRepo = null,
+        ISaleRepository? saleRepo = null,
+        QuarterlyBonusSettings? bonusSettings = null)
+    {
+        return new SalesController(
+            saleRepo   ?? new Mock<ISaleRepository>().Object,
+            productRepo ?? new Mock<IRepository<Product>>().Object,
+            context,
+            Options.Create(bonusSettings ?? new QuarterlyBonusSettings { TopN = 1, BonusPercentage = 10 }));
+    }
+
+    private static Product MakeProduct(int id, int qty = 5) => new()
+    {
+        Id = id, Name = $"Bike {id}", Manufacturer = "Trek", Style = "Road",
+        SalePrice = 1000, PurchasePrice = 600, QtyOnHand = qty, CommissionPercentage = 5,
+    };
+
+    private static Salesperson MakeSalesperson(int id, bool terminated = false) => new()
+    {
+        Id = id, FirstName = "Test", LastName = $"Person{id}", Address = "1 St",
+        Phone = $"555-000{id}", StartDate = DateTime.Today.AddYears(-2), Manager = "Boss",
+        TerminationDate = terminated ? DateTime.Today.AddMonths(-1) : null,
+    };
+
+    // ── Create — validation tests ─────────────────────────────────────────────
+
+    [Fact]
+    public async Task Create_ReturnsNotFound_WhenProductDoesNotExist()
+    {
+        var productRepo = new Mock<IRepository<Product>>();
+        productRepo.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync((Product?)null);
+
+        using var ctx = CreateContext();
+        var result = await CreateController(ctx, productRepo.Object)
+            .Create(new CreateSaleRequest(99, 1, 1, DateTime.Today));
+
+        Assert.IsType<NotFoundObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Create_ReturnsBadRequest_WhenProductIsOutOfStock()
+    {
+        var productRepo = new Mock<IRepository<Product>>();
+        productRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(MakeProduct(1, qty: 0));
+
+        using var ctx = CreateContext();
+        var result = await CreateController(ctx, productRepo.Object)
+            .Create(new CreateSaleRequest(1, 1, 1, DateTime.Today));
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Create_ReturnsNotFound_WhenSalespersonDoesNotExist()
+    {
+        var productRepo = new Mock<IRepository<Product>>();
+        productRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(MakeProduct(1));
+
+        using var ctx = CreateContext(); // empty — no salespersons
+        var result = await CreateController(ctx, productRepo.Object)
+            .Create(new CreateSaleRequest(1, 99, 1, DateTime.Today));
+
+        Assert.IsType<NotFoundObjectResult>(result);
+    }
+
+    [Fact]
+    public async Task Create_ReturnsBadRequest_WhenSalespersonIsTerminated()
+    {
+        var productRepo = new Mock<IRepository<Product>>();
+        productRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(MakeProduct(1));
+
+        using var ctx = CreateContext();
+        ctx.Salespersons.Add(MakeSalesperson(1, terminated: true));
+        await ctx.SaveChangesAsync();
+
+        var result = await CreateController(ctx, productRepo.Object)
+            .Create(new CreateSaleRequest(1, 1, 1, DateTime.Today));
+
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    // ── QuarterlyReport — validation tests ───────────────────────────────────
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-1)]
+    [InlineData(5)]
+    public async Task QuarterlyReport_ReturnsBadRequest_WhenQuarterIsOutOfRange(int quarter)
+    {
+        using var ctx = CreateContext();
+        var result = await CreateController(ctx).QuarterlyReport(2024, quarter);
+        Assert.IsType<BadRequestObjectResult>(result);
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    [InlineData(4)]
+    public async Task QuarterlyReport_ReturnsOk_ForAllValidQuarters(int quarter)
+    {
+        var saleRepo = new Mock<ISaleRepository>();
+        saleRepo.Setup(r => r.GetByQuarterAsync(It.IsAny<int>(), It.IsAny<int>()))
+                .ReturnsAsync(new List<Sale>());
+
+        using var ctx = CreateContext();
+        var result = await CreateController(ctx, saleRepo: saleRepo.Object)
+            .QuarterlyReport(2024, quarter);
+
+        Assert.IsType<OkObjectResult>(result);
+    }
+}

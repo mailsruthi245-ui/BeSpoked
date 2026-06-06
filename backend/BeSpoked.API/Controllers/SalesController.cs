@@ -1,4 +1,5 @@
 using BeSpoked.API.DTOs;
+using BeSpoked.API.Services;
 using BeSpoked.API.Settings;
 using BeSpoked.Core.Entities;
 using BeSpoked.Core.Interfaces;
@@ -105,7 +106,7 @@ public class SalesController : ControllerBase
             r.TotalSales,
             r.TotalRevenue,
             r.TotalCommission,
-            i < _bonus.TopN ? r.TotalCommission * (_bonus.BonusPercentage / 100m) : 0,
+            BonusCalculator.Calculate(r.TotalCommission, i, _bonus),
             i < _bonus.TopN,
             r.Sales.Select(ToDto)
         ));

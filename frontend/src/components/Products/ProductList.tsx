@@ -1,14 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { getProducts, updateProduct } from '../../services/api';
 import { Product } from '../../types';
+import { useFetch } from '../../hooks/useFetch';
+import Modal from '../common/Modal';
 
 const fmt$ = (v: number) => `$${Number(v).toFixed(2)}`;
 
-interface FieldDef {
-  key: keyof Product;
-  label: string;
-  type?: string;
-}
+interface FieldDef { key: keyof Product; label: string; type?: string; }
 
 const fields: FieldDef[] = [
   { key: 'name',                 label: 'Name' },
@@ -21,23 +19,14 @@ const fields: FieldDef[] = [
 ];
 
 export default function ProductList() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState('');
-  const [editing, setEditing]   = useState<Product | null>(null);
-
-  useEffect(() => {
-    getProducts()
-      .then(setProducts)
-      .catch(() => setError('Failed to load products.'))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: products, loading, error, setData: setProducts, setError } = useFetch<Product[]>(getProducts);
+  const [editing, setEditing] = useState<Product | null>(null);
 
   const handleSave = async () => {
     if (!editing) return;
     try {
       await updateProduct(editing.id, editing);
-      setProducts(prev => prev.map(p => p.id === editing.id ? editing : p));
+      setProducts(prev => (prev ?? []).map(p => p.id === editing.id ? editing : p));
       setEditing(null);
     } catch (e) {
       setError((e as Error).message);
@@ -60,7 +49,7 @@ export default function ProductList() {
             </tr>
           </thead>
           <tbody>
-            {products.map(p => (
+            {(products ?? []).map(p => (
               <tr key={p.id}>
                 <td><strong>{p.name}</strong></td>
                 <td>{p.manufacturer}</td>
@@ -80,34 +69,25 @@ export default function ProductList() {
             ))}
           </tbody>
         </table>
-        {products.length === 0 && <p className="empty">No products found.</p>}
+        {!products?.length && <p className="empty">No products found.</p>}
       </div>
 
       {editing && (
-        <div className="modal-overlay" onClick={() => setEditing(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <h2>Edit Product</h2>
-            <div className="form-grid">
-              {fields.map(({ key, label, type = 'text' }) => (
-                <div className="form-group" key={key}>
-                  <label>{label}</label>
-                  <input
-                    type={type}
-                    value={editing[key] as string | number}
-                    onChange={e => setEditing({
-                      ...editing,
-                      [key]: type === 'number' ? +e.target.value : e.target.value,
-                    })}
-                  />
-                </div>
-              ))}
+        <Modal title="Edit Product" onClose={() => setEditing(null)} onSave={handleSave}>
+          {fields.map(({ key, label, type = 'text' }) => (
+            <div className="form-group" key={key}>
+              <label>{label}</label>
+              <input
+                type={type}
+                value={editing[key] as string | number}
+                onChange={e => setEditing({
+                  ...editing,
+                  [key]: type === 'number' ? +e.target.value : e.target.value,
+                })}
+              />
             </div>
-            <div className="modal-actions">
-              <button className="btn btn-secondary" onClick={() => setEditing(null)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleSave}>Save</button>
-            </div>
-          </div>
-        </div>
+          ))}
+        </Modal>
       )}
     </div>
   );

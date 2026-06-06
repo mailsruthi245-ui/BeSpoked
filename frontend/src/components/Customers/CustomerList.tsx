@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { getCustomers, createCustomer } from '../../services/api';
 import { Customer } from '../../types';
+import { useFetch } from '../../hooks/useFetch';
+import Modal from '../common/Modal';
 
 interface CustomerForm {
   firstName: string;
@@ -16,17 +18,8 @@ const EMPTY_FORM: CustomerForm = {
 };
 
 export default function CustomerList() {
-  const [customers, setCustomers] = useState<Customer[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState('');
-  const [modal, setModal]         = useState<CustomerForm | null>(null);
-
-  useEffect(() => {
-    getCustomers()
-      .then(setCustomers)
-      .catch(() => setError('Failed to load customers.'))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: customers, loading, error, setData: setCustomers, setError } = useFetch<Customer[]>(getCustomers);
+  const [modal, setModal] = useState<CustomerForm | null>(null);
 
   const set = (key: keyof CustomerForm, val: string) =>
     setModal(prev => prev ? { ...prev, [key]: val } : null);
@@ -39,7 +32,7 @@ export default function CustomerList() {
     setError('');
     try {
       const created = await createCustomer(modal);
-      setCustomers(prev => [...prev, created]);
+      setCustomers(prev => [...(prev ?? []), created]);
       setModal(null);
     } catch (e) {
       setError((e as Error).message);
@@ -64,7 +57,7 @@ export default function CustomerList() {
             <tr><th>Name</th><th>Phone</th><th>Address</th><th>Customer Since</th></tr>
           </thead>
           <tbody>
-            {customers.map(c => (
+            {(customers ?? []).map(c => (
               <tr key={c.id}>
                 <td><strong>{c.firstName} {c.lastName}</strong></td>
                 <td>{c.phone}</td>
@@ -74,43 +67,27 @@ export default function CustomerList() {
             ))}
           </tbody>
         </table>
-        {customers.length === 0 && <p className="empty">No customers found.</p>}
+        {!customers?.length && <p className="empty">No customers found.</p>}
       </div>
 
       {modal && (
-        <div className="modal-overlay" onClick={() => setModal(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <h2>New Customer</h2>
-            <div className="form-grid">
-              {([
-                { key: 'firstName' as const, label: 'First Name' },
-                { key: 'lastName'  as const, label: 'Last Name' },
-                { key: 'address'   as const, label: 'Address' },
-                { key: 'phone'     as const, label: 'Phone' },
-              ]).map(({ key, label }) => (
-                <div className="form-group" key={key}>
-                  <label>{label}</label>
-                  <input
-                    value={modal[key]}
-                    onChange={e => set(key, e.target.value)}
-                  />
-                </div>
-              ))}
-              <div className="form-group">
-                <label>Customer Since</label>
-                <input
-                  type="date"
-                  value={modal.startDate}
-                  onChange={e => set('startDate', e.target.value)}
-                />
-              </div>
+        <Modal title="New Customer" onClose={() => setModal(null)} onSave={handleSave}>
+          {([
+            { key: 'firstName' as const, label: 'First Name' },
+            { key: 'lastName'  as const, label: 'Last Name' },
+            { key: 'address'   as const, label: 'Address' },
+            { key: 'phone'     as const, label: 'Phone' },
+          ]).map(({ key, label }) => (
+            <div className="form-group" key={key}>
+              <label>{label}</label>
+              <input value={modal[key]} onChange={e => set(key, e.target.value)} />
             </div>
-            <div className="modal-actions">
-              <button className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleSave}>Save</button>
-            </div>
+          ))}
+          <div className="form-group">
+            <label>Customer Since</label>
+            <input type="date" value={modal.startDate} onChange={e => set('startDate', e.target.value)} />
           </div>
-        </div>
+        </Modal>
       )}
     </div>
   );

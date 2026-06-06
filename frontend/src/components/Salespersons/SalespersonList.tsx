@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { getSalespersons, createSalesperson, updateSalesperson } from '../../services/api';
 import { Salesperson } from '../../types';
+import { useFetch } from '../../hooks/useFetch';
+import Modal from '../common/Modal';
 
 type StringField = 'firstName' | 'lastName' | 'address' | 'phone' | 'manager';
 
@@ -19,17 +21,8 @@ const BLANK: Salesperson = {
 };
 
 export default function SalespersonList() {
-  const [salespersons, setSalespersons] = useState<Salesperson[]>([]);
-  const [loading, setLoading]           = useState(true);
-  const [error, setError]               = useState('');
-  const [editing, setEditing]           = useState<Salesperson | null>(null);
-
-  useEffect(() => {
-    getSalespersons()
-      .then(setSalespersons)
-      .catch(() => setError('Failed to load salespersons.'))
-      .finally(() => setLoading(false));
-  }, []);
+  const { data: salespersons, loading, error, setData: setSalespersons, setError } = useFetch<Salesperson[]>(getSalespersons);
+  const [editing, setEditing] = useState<Salesperson | null>(null);
 
   const set = (key: keyof Salesperson, val: string | null) =>
     setEditing(prev => prev ? { ...prev, [key]: val } : null);
@@ -41,10 +34,10 @@ export default function SalespersonList() {
       if (editing.id === 0) {
         const { id: _id, ...payload } = editing;
         const created = await createSalesperson(payload);
-        setSalespersons(prev => [...prev, created]);
+        setSalespersons(prev => [...(prev ?? []), created]);
       } else {
         await updateSalesperson(editing.id, editing);
-        setSalespersons(prev => prev.map(s => s.id === editing.id ? editing : s));
+        setSalespersons(prev => (prev ?? []).map(s => s.id === editing.id ? editing : s));
       }
       setEditing(null);
     } catch (e) {
@@ -76,7 +69,7 @@ export default function SalespersonList() {
             </tr>
           </thead>
           <tbody>
-            {salespersons.map(sp => (
+            {(salespersons ?? []).map(sp => (
               <tr key={sp.id}>
                 <td><strong>{sp.firstName} {sp.lastName}</strong></td>
                 <td>{sp.phone}</td>
@@ -97,48 +90,40 @@ export default function SalespersonList() {
             ))}
           </tbody>
         </table>
-        {salespersons.length === 0 && <p className="empty">No salespersons found.</p>}
+        {!salespersons?.length && <p className="empty">No salespersons found.</p>}
       </div>
 
       {editing && (
-        <div className="modal-overlay" onClick={() => setEditing(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <h2>{editing.id === 0 ? 'New Salesperson' : 'Edit Salesperson'}</h2>
-            <div className="form-grid">
-              {textFields.map(({ key, label }) => (
-                <div className="form-group" key={key}>
-                  <label>{label}</label>
-                  <input
-                    value={editing[key]}
-                    onChange={e => set(key, e.target.value)}
-                  />
-                </div>
-              ))}
-              <div className="form-group">
-                <label>Start Date</label>
-                <input
-                  type="date"
-                  value={editing.startDate.split('T')[0]}
-                  onChange={e => set('startDate', e.target.value)}
-                />
-              </div>
-              {editing.id !== 0 && (
-                <div className="form-group">
-                  <label>Termination Date</label>
-                  <input
-                    type="date"
-                    value={editing.terminationDate ? editing.terminationDate.split('T')[0] : ''}
-                    onChange={e => set('terminationDate', e.target.value || null)}
-                  />
-                </div>
-              )}
+        <Modal
+          title={editing.id === 0 ? 'New Salesperson' : 'Edit Salesperson'}
+          onClose={() => setEditing(null)}
+          onSave={handleSave}
+        >
+          {textFields.map(({ key, label }) => (
+            <div className="form-group" key={key}>
+              <label>{label}</label>
+              <input value={editing[key]} onChange={e => set(key, e.target.value)} />
             </div>
-            <div className="modal-actions">
-              <button className="btn btn-secondary" onClick={() => setEditing(null)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleSave}>Save</button>
-            </div>
+          ))}
+          <div className="form-group">
+            <label>Start Date</label>
+            <input
+              type="date"
+              value={editing.startDate.split('T')[0]}
+              onChange={e => set('startDate', e.target.value)}
+            />
           </div>
-        </div>
+          {editing.id !== 0 && (
+            <div className="form-group">
+              <label>Termination Date</label>
+              <input
+                type="date"
+                value={editing.terminationDate ? editing.terminationDate.split('T')[0] : ''}
+                onChange={e => set('terminationDate', e.target.value || null)}
+              />
+            </div>
+          )}
+        </Modal>
       )}
     </div>
   );

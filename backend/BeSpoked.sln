@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeSpoked.API", "BeSpoked.API\BeSpoked.API.csproj", "{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}"
@@ -6,6 +6,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeSpoked.Core", "BeSpoked.Core\BeSpoked.Core.csproj", "{B2C3D4E5-F6A7-8901-BCDE-F12345678901}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeSpoked.Infrastructure", "BeSpoked.Infrastructure\BeSpoked.Infrastructure.csproj", "{C3D4E5F6-A7B8-9012-CDEF-123456789012}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BeSpoked.Tests", "BeSpoked.Tests\BeSpoked.Tests.csproj", "{D9BB992E-31E5-42E1-A12E-7C007BEC6B87}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,5 +21,9 @@ Global
 		{B2C3D4E5-F6A7-8901-BCDE-F12345678901}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C3D4E5F6-A7B8-9012-CDEF-123456789012}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C3D4E5F6-A7B8-9012-CDEF-123456789012}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9BB992E-31E5-42E1-A12E-7C007BEC6B87}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D9BB992E-31E5-42E1-A12E-7C007BEC6B87}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D9BB992E-31E5-42E1-A12E-7C007BEC6B87}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D9BB992E-31E5-42E1-A12E-7C007BEC6B87}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

@@ -1,6 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { getDiscounts, createDiscount, updateDiscount, deleteDiscount, getProducts } from '../../services/api';
 import { Discount, Product } from '../../types';
+import { useFetch } from '../../hooks/useFetch';
+import Modal from '../common/Modal';
 
 const fmtDate = (d: string) => new Date(d).toLocaleDateString();
 const toInput  = (d: string) => new Date(d).toISOString().split('T')[0];
@@ -18,36 +20,27 @@ const EMPTY_FORM: DiscountForm = {
 };
 
 export default function DiscountList() {
-  const [discounts, setDiscounts] = useState<Discount[]>([]);
-  const [products, setProducts]   = useState<Product[]>([]);
-  const [loading, setLoading]     = useState(true);
-  const [error, setError]         = useState('');
-  const [modal, setModal]         = useState<DiscountForm | null>(null);
+  const { data: discounts, loading: dLoading, error: dError, setData: setDiscounts } = useFetch<Discount[]>(getDiscounts);
+  const { data: products,  loading: pLoading, error: pError } = useFetch<Product[]>(getProducts);
+  const [actionError, setActionError] = useState('');
+  const [modal, setModal] = useState<DiscountForm | null>(null);
 
-  useEffect(() => {
-    Promise.all([getDiscounts(), getProducts()])
-      .then(([d, p]) => { setDiscounts(d); setProducts(p); })
-      .catch(() => setError('Failed to load data.'))
-      .finally(() => setLoading(false));
-  }, []);
+  const loading = dLoading || pLoading;
+  const error   = dError || pError || actionError;
 
   const openCreate = () => setModal({ ...EMPTY_FORM });
   const openEdit   = (d: Discount) => setModal({
-    id:                 d.id,
-    productId:          String(d.productId),
-    beginDate:          toInput(d.beginDate),
-    endDate:            toInput(d.endDate),
+    id: d.id, productId: String(d.productId),
+    beginDate: toInput(d.beginDate), endDate: toInput(d.endDate),
     discountPercentage: String(d.discountPercentage),
   });
 
   const handleSave = async () => {
     if (!modal) return;
-    setError('');
+    setActionError('');
     const payload = {
-      id:                 modal.id,
-      productId:          Number(modal.productId),
-      beginDate:          modal.beginDate,
-      endDate:            modal.endDate,
+      id: modal.id, productId: Number(modal.productId),
+      beginDate: modal.beginDate, endDate: modal.endDate,
       discountPercentage: Number(modal.discountPercentage),
     };
     try {
@@ -56,10 +49,11 @@ export default function DiscountList() {
       } else {
         await updateDiscount(modal.id, payload);
       }
-      setDiscounts(await getDiscounts());
+      const fresh = await getDiscounts();
+      setDiscounts(fresh);
       setModal(null);
     } catch (e) {
-      setError((e as Error).message);
+      setActionError((e as Error).message);
     }
   };
 
@@ -67,9 +61,9 @@ export default function DiscountList() {
     if (!window.confirm('Delete this discount?')) return;
     try {
       await deleteDiscount(id);
-      setDiscounts(prev => prev.filter(d => d.id !== id));
+      setDiscounts(prev => (prev ?? []).filter(d => d.id !== id));
     } catch (e) {
-      setError((e as Error).message);
+      setActionError((e as Error).message);
     }
   };
 
@@ -89,12 +83,10 @@ export default function DiscountList() {
       <div className="card">
         <table>
           <thead>
-            <tr>
-              <th>Product</th><th>Begin Date</th><th>End Date</th><th>Discount %</th><th></th>
-            </tr>
+            <tr><th>Product</th><th>Begin Date</th><th>End Date</th><th>Discount %</th><th></th></tr>
           </thead>
           <tbody>
-            {discounts.map(d => (
+            {(discounts ?? []).map(d => (
               <tr key={d.id}>
                 <td><strong>{d.productName}</strong></td>
                 <td>{fmtDate(d.beginDate)}</td>
@@ -103,58 +95,43 @@ export default function DiscountList() {
                 <td>
                   <button className="btn btn-secondary btn-sm" onClick={() => openEdit(d)}>Edit</button>
                   {' '}
-                  <button
-                    className="btn btn-sm"
-                    style={{ background: '#e74c3c', color: '#fff' }}
-                    onClick={() => handleDelete(d.id)}
-                  >
-                    Delete
-                  </button>
+                  <button className="btn btn-sm" style={{ background: '#e74c3c', color: '#fff' }} onClick={() => handleDelete(d.id)}>Delete</button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {discounts.length === 0 && <p className="empty">No discounts found.</p>}
+        {!discounts?.length && <p className="empty">No discounts found.</p>}
       </div>
 
       {modal && (
-        <div className="modal-overlay" onClick={() => setModal(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
-            <h2>{modal.id === 0 ? 'New Discount' : 'Edit Discount'}</h2>
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Product</label>
-                <select value={modal.productId} onChange={e => set('productId', e.target.value)}>
-                  <option value="">Select a product…</option>
-                  {products.map(p => (
-                    <option key={p.id} value={p.id}>{p.name} — {p.manufacturer}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="form-group">
-                <label>Begin Date</label>
-                <input type="date" value={modal.beginDate} onChange={e => set('beginDate', e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label>End Date</label>
-                <input type="date" value={modal.endDate} onChange={e => set('endDate', e.target.value)} />
-              </div>
-              <div className="form-group">
-                <label>Discount %</label>
-                <input
-                  type="number" min="0" max="100" step="0.01"
-                  value={modal.discountPercentage}
-                  onChange={e => set('discountPercentage', e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="modal-actions">
-              <button className="btn btn-secondary" onClick={() => setModal(null)}>Cancel</button>
-              <button className="btn btn-primary" onClick={handleSave}>Save</button>
-            </div>
+        <Modal
+          title={modal.id === 0 ? 'New Discount' : 'Edit Discount'}
+          onClose={() => setModal(null)}
+          onSave={handleSave}
+        >
+          <div className="form-group">
+            <label>Product</label>
+            <select value={modal.productId} onChange={e => set('productId', e.target.value)}>
+              <option value="">Select a product…</option>
+              {(products ?? []).map(p => (
+                <option key={p.id} value={p.id}>{p.name} — {p.manufacturer}</option>
+              ))}
+            </select>
           </div>
-        </div>
+          <div className="form-group">
+            <label>Begin Date</label>
+            <input type="date" value={modal.beginDate} onChange={e => set('beginDate', e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>End Date</label>
+            <input type="date" value={modal.endDate} onChange={e => set('endDate', e.target.value)} />
+          </div>
+          <div className="form-group">
+            <label>Discount %</label>
+            <input type="number" min="0" max="100" step="0.01" value={modal.discountPercentage} onChange={e => set('discountPercentage', e.target.value)} />
+          </div>
+        </Modal>
       )}
     </div>
   );
