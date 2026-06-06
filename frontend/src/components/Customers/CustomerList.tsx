@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { getCustomers, createCustomer } from '../../services/api';
 import { Customer } from '../../types';
 import { useFetch } from '../../hooks/useFetch';

@@ -1,11 +1,11 @@
-import React from 'react';
+import { ReactNode } from 'react';
 
 interface ModalProps {
   title: string;
   onClose: () => void;
   onSave: () => void;
   saveLabel?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export default function Modal({ title, onClose, onSave, saveLabel = 'Save', children }: ModalProps) {

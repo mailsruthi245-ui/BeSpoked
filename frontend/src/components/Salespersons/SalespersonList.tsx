@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { getSalespersons, createSalesperson, updateSalesperson } from '../../services/api';
 import { Salesperson } from '../../types';
 import { useFetch } from '../../hooks/useFetch';

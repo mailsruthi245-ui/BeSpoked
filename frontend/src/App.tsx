@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter, Routes, Route, NavLink } from 'react-router-dom';
 import SalespersonList from './components/Salespersons/SalespersonList';
 import ProductList from './components/Products/ProductList';

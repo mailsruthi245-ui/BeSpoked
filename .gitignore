@@ -17,3 +17,5 @@ frontend/package-lock.json
 
 # macOS
 .DS_Store
+backend/.dockerignore
+frontend/.dockerignore
