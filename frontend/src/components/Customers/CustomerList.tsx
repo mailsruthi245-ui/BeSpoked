@@ -12,6 +12,13 @@ interface CustomerForm {
   startDate: string;
 }
 
+const textFields: Array<{ key: keyof Omit<CustomerForm, 'startDate'>; label: string }> = [
+  { key: 'firstName', label: 'First Name' },
+  { key: 'lastName',  label: 'Last Name' },
+  { key: 'address',   label: 'Address' },
+  { key: 'phone',     label: 'Phone' },
+];
+
 const EMPTY_FORM: CustomerForm = {
   firstName: '', lastName: '', address: '', phone: '',
   startDate: new Date().toISOString().split('T')[0],
@@ -72,12 +79,7 @@ export default function CustomerList() {
 
       {modal && (
         <Modal title="New Customer" onClose={() => setModal(null)} onSave={handleSave}>
-          {([
-            { key: 'firstName' as const, label: 'First Name' },
-            { key: 'lastName'  as const, label: 'Last Name' },
-            { key: 'address'   as const, label: 'Address' },
-            { key: 'phone'     as const, label: 'Phone' },
-          ]).map(({ key, label }) => (
+          {textFields.map(({ key, label }) => (
             <div className="form-group" key={key}>
               <label>{label}</label>
               <input value={modal[key]} onChange={e => set(key, e.target.value)} />

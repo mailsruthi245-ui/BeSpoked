@@ -53,6 +53,8 @@ tr:hover td { background: #fafaf9; }
 .btn-primary:hover { opacity: .88; }
 .btn-secondary { background: var(--border); color: var(--black); }
 .btn-secondary:hover { background: #d1d5db; }
+.btn-danger { background: #e74c3c; color: white; }
+.btn-danger:hover { opacity: .88; }
 .btn-sm { padding: 0.3rem 0.7rem; font-size: 0.8rem; }
 
 /* Filters */

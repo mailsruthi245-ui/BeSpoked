@@ -45,12 +45,12 @@ export default function DiscountList() {
     };
     try {
       if (modal.id === 0) {
-        await createDiscount(payload);
+        const created = await createDiscount(payload);
+        setDiscounts(prev => [...(prev ?? []), created]);
       } else {
         await updateDiscount(modal.id, payload);
+        setDiscounts(prev => (prev ?? []).map(d => d.id === modal.id ? { ...d, ...payload, productName: products?.find(p => p.id === payload.productId)?.name ?? d.productName } : d));
       }
-      const fresh = await getDiscounts();
-      setDiscounts(fresh);
       setModal(null);
     } catch (e) {
       setActionError((e as Error).message);
@@ -95,7 +95,7 @@ export default function DiscountList() {
                 <td>
                   <button className="btn btn-secondary btn-sm" onClick={() => openEdit(d)}>Edit</button>
                   {' '}
-                  <button className="btn btn-sm" style={{ background: '#e74c3c', color: '#fff' }} onClick={() => handleDelete(d.id)}>Delete</button>
+                  <button className="btn btn-danger btn-sm" onClick={() => handleDelete(d.id)}>Delete</button>
                 </td>
               </tr>
             ))}
