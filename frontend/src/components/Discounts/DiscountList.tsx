@@ -49,7 +49,10 @@ export default function DiscountList() {
         setDiscounts(prev => [...(prev ?? []), created]);
       } else {
         await updateDiscount(modal.id, payload);
-        setDiscounts(prev => (prev ?? []).map(d => d.id === modal.id ? { ...d, ...payload, productName: products?.find(p => p.id === payload.productId)?.name ?? d.productName } : d));
+        const productName = products?.find(p => p.id === payload.productId)?.name;
+        setDiscounts(prev => (prev ?? []).map(d =>
+          d.id === modal.id ? { ...d, ...payload, productName: productName ?? d.productName } : d
+        ));
       }
       setModal(null);
     } catch (e) {

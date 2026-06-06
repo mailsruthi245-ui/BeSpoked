@@ -48,42 +48,50 @@ BeSpoked/
 
 ## Setup & Run
 
-### Prerequisites
-- .NET 8 SDK
-- SQL Server (or LocalDB — ships with Visual Studio)
-- Node.js 18+
+### Option 1 — Docker (recommended)
 
-### Backend
+Requires [Docker Desktop](https://www.docker.com/products/docker-desktop/).
 
 ```bash
-cd backend
+docker compose up --build
+```
 
-# Restore packages
-dotnet restore
+That's it. Docker will:
+1. Start SQL Server
+2. Build and run the .NET API (runs migrations + seeds data automatically)
+3. Build the React app and serve it via nginx
 
-# Create the database + run migrations + seed data
-# (happens automatically on first run in Development)
-cd BeSpoked.API
+| Service  | URL                        |
+|----------|----------------------------|
+| Frontend | http://localhost:3000      |
+| API      | http://localhost:5000      |
+| Swagger  | http://localhost:5000/swagger |
+
+To stop: `docker compose down`
+To wipe the database too: `docker compose down -v`
+
+---
+
+### Option 2 — Run locally
+
+**Prerequisites:** .NET 8 SDK, SQL Server, Node.js 18+
+
+Update the connection string in `backend/BeSpoked.API/appsettings.json` to match your SQL Server instance, then:
+
+```bash
+# Terminal 1 — API
+cd backend/BeSpoked.API
 dotnet run
-# API runs on https://localhost:5001 / http://localhost:5000
-```
+# Runs on http://localhost:5000
 
-If you prefer to run migrations manually:
-```bash
-cd backend
-dotnet ef migrations add InitialCreate --project BeSpoked.Infrastructure --startup-project BeSpoked.API
-dotnet ef database update --project BeSpoked.Infrastructure --startup-project BeSpoked.API
-```
-
-### Frontend
-
-```bash
+# Terminal 2 — Frontend
 cd frontend
 npm install
 npm start
-# React dev server on http://localhost:3000
-# Proxies /api/* to http://localhost:5000 via package.json proxy
+# Runs on http://localhost:3000
 ```
+
+Migrations and seed data are applied automatically on first run.
 
 ---
 

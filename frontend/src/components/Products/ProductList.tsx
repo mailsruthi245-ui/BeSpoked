@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { getProducts, updateProduct } from '../../services/api';
+import { getProducts, createProduct, updateProduct } from '../../services/api';
 import { Product } from '../../types';
 import { useFetch } from '../../hooks/useFetch';
 import Modal from '../common/Modal';
@@ -18,6 +18,11 @@ const fields: FieldDef[] = [
   { key: 'commissionPercentage', label: 'Commission %',    type: 'number' },
 ];
 
+const BLANK: Product = {
+  id: 0, name: '', manufacturer: '', style: '',
+  purchasePrice: 0, salePrice: 0, qtyOnHand: 0, commissionPercentage: 0,
+};
+
 export default function ProductList() {
   const { data: products, loading, error, setData: setProducts, setError } = useFetch<Product[]>(getProducts);
   const [editing, setEditing] = useState<Product | null>(null);
@@ -25,8 +30,14 @@ export default function ProductList() {
   const handleSave = async () => {
     if (!editing) return;
     try {
-      await updateProduct(editing.id, editing);
-      setProducts(prev => (prev ?? []).map(p => p.id === editing.id ? editing : p));
+      if (editing.id === 0) {
+        const { id: _id, ...payload } = editing;
+        const created = await createProduct(payload);
+        setProducts(prev => [...(prev ?? []), created]);
+      } else {
+        await updateProduct(editing.id, editing);
+        setProducts(prev => (prev ?? []).map(p => p.id === editing.id ? editing : p));
+      }
       setEditing(null);
     } catch (e) {
       setError((e as Error).message);
@@ -37,7 +48,10 @@ export default function ProductList() {
 
   return (
     <div>
-      <div className="page-header"><h1>Products</h1></div>
+      <div className="page-header">
+        <h1>Products</h1>
+        <button className="btn btn-primary" onClick={() => setEditing({ ...BLANK })}>+ New Product</button>
+      </div>
       {error && <p className="error">{error}</p>}
 
       <div className="card">
@@ -73,7 +87,11 @@ export default function ProductList() {
       </div>
 
       {editing && (
-        <Modal title="Edit Product" onClose={() => setEditing(null)} onSave={handleSave}>
+        <Modal
+          title={editing.id === 0 ? 'New Product' : 'Edit Product'}
+          onClose={() => setEditing(null)}
+          onSave={handleSave}
+        >
           {fields.map(({ key, label, type = 'text' }) => (
             <div className="form-group" key={key}>
               <label>{label}</label>

@@ -21,7 +21,6 @@ export default function App() {
             <NavLink to="/customers">Customers</NavLink>
             <NavLink to="/sales">Sales</NavLink>
             <NavLink to="/discounts">Discounts</NavLink>
-            <NavLink to="/sales/new" className="nav-cta">+ New Sale</NavLink>
             <NavLink to="/report">Q Report</NavLink>
           </nav>
         </header>

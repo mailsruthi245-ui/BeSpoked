@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getSales } from '../../services/api';
 import { Sale } from '../../types';
 
 const fmt$ = (v: number) => `$${Number(v).toFixed(2)}`;
 
 export default function SaleList() {
+  const navigate = useNavigate();
   const [sales, setSales]     = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
   const [from, setFrom]       = useState('');
@@ -23,7 +25,10 @@ export default function SaleList() {
 
   return (
     <div>
-      <div className="page-header"><h1>Sales</h1></div>
+      <div className="page-header">
+        <h1>Sales</h1>
+        <button className="btn btn-primary" onClick={() => navigate('/sales/new')}>+ New Sale</button>
+      </div>
       {error && <p className="error">{error}</p>}
 
       <div className="filters">

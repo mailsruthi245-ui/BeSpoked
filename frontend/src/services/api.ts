@@ -11,8 +11,9 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     ...options,
   });
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err || `HTTP ${res.status}`);
+    const raw = await res.text();
+    const msg = raw.startsWith('"') ? JSON.parse(raw) : raw;
+    throw new Error(msg || `HTTP ${res.status}`);
   }
   if (res.status === 204) return null as unknown as T;
   return res.json() as Promise<T>;
@@ -26,8 +27,10 @@ export const updateSalesperson = (id: number, data: Salesperson) =>
   request<null>(`/salespersons/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 
 // ── Products ──────────────────────────────────────────────────────────────────
-export const getProducts   = () => request<Product[]>('/products');
-export const updateProduct = (id: number, data: Product) =>
+export const getProducts    = () => request<Product[]>('/products');
+export const createProduct  = (data: Omit<Product, 'id'>) =>
+  request<Product>('/products', { method: 'POST', body: JSON.stringify({ id: 0, ...data }) });
+export const updateProduct  = (id: number, data: Product) =>
   request<null>(`/products/${id}`, { method: 'PUT', body: JSON.stringify(data) });
 
 // ── Customers ─────────────────────────────────────────────────────────────────

@@ -6,46 +6,42 @@ using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── Services ──────────────────────────────────────────────────────────────────
 builder.Services.AddControllers().AddJsonOptions(options =>
-    options.JsonSerializerOptions.ReferenceHandler = 
+    options.JsonSerializerOptions.ReferenceHandler =
         System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles);
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// EF Core — SQL Server
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Bonus settings — bound from appsettings.json
 builder.Services.Configure<QuarterlyBonusSettings>(
     builder.Configuration.GetSection(QuarterlyBonusSettings.Section));
 
-// Repositories — registered as scoped (per HTTP request)
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<ISaleRepository, SaleRepository>();
 
-// CORS — allow the React dev server
 builder.Services.AddCors(options =>
-{
     options.AddPolicy("ReactApp", policy =>
         policy.WithOrigins("http://localhost:3000")
               .AllowAnyHeader()
-              .AllowAnyMethod());
-});
+              .AllowAnyMethod()));
 
 var app = builder.Build();
 
-// ── Middleware ─────────────────────────────────────────────────────────────────
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();
 
-    // Auto-apply migrations and seed on startup in dev
+    // Retry loop: SQL Server takes ~20s to start in Docker
     using var scope = app.Services.CreateScope();
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
+    for (var attempt = 1; attempt <= 10; attempt++)
+    {
+        try { db.Database.Migrate(); break; }
+        catch when (attempt < 10) { Thread.Sleep(3000); }
+    }
 }
 
 app.UseCors("ReactApp");

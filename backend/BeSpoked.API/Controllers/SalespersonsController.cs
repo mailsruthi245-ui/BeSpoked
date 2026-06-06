@@ -2,7 +2,6 @@ using BeSpoked.API.DTOs;
 using BeSpoked.Core.Entities;
 using BeSpoked.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace BeSpoked.API.Controllers;
 
@@ -31,30 +30,28 @@ public class SalespersonsController : ControllerBase
     [HttpPost]
     public async Task<IActionResult> Create(Salesperson salesperson)
     {
-        try
-        {
-            var created = await _repo.AddAsync(salesperson);
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, ToDto(created));
-        }
-        catch (DbUpdateException)
-        {
-            return Conflict("A salesperson with that name and phone already exists.");
-        }
+        var all = await _repo.GetAllAsync();
+        if (all.Any(s => string.Equals(s.FirstName, salesperson.FirstName, StringComparison.OrdinalIgnoreCase)
+                      && string.Equals(s.LastName,  salesperson.LastName,  StringComparison.OrdinalIgnoreCase)))
+            return Conflict($"A salesperson named {salesperson.FirstName} {salesperson.LastName} already exists.");
+
+        var created = await _repo.AddAsync(salesperson);
+        return CreatedAtAction(nameof(GetById), new { id = created.Id }, ToDto(created));
     }
 
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, Salesperson salesperson)
     {
         if (id != salesperson.Id) return BadRequest();
-        try
-        {
-            await _repo.UpdateAsync(salesperson);
-            return NoContent();
-        }
-        catch (DbUpdateException)
-        {
-            return Conflict("A salesperson with that name and phone already exists.");
-        }
+
+        var all = await _repo.GetAllAsync();
+        if (all.Any(s => s.Id != id
+                      && string.Equals(s.FirstName, salesperson.FirstName, StringComparison.OrdinalIgnoreCase)
+                      && string.Equals(s.LastName,  salesperson.LastName,  StringComparison.OrdinalIgnoreCase)))
+            return Conflict($"A salesperson named {salesperson.FirstName} {salesperson.LastName} already exists.");
+
+        await _repo.UpdateAsync(salesperson);
+        return NoContent();
     }
 
     private static SalespersonDto ToDto(Salesperson s) => new(
