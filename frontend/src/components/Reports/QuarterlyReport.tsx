@@ -1,22 +1,22 @@
 import React, { useState } from 'react';
 import { getQuarterlyReport } from '../../services/api';
+import { QuarterlyReportData } from '../../types';
 
-const fmt$ = (v) => `$${Number(v).toFixed(2)}`;
-const currentYear = new Date().getFullYear();
+const fmt$ = (v: number) => `$${Number(v).toFixed(2)}`;
+const currentYear    = new Date().getFullYear();
 const currentQuarter = Math.ceil((new Date().getMonth() + 1) / 3);
 
 export default function QuarterlyReport() {
   const [year, setYear]       = useState(currentYear);
   const [quarter, setQuarter] = useState(currentQuarter);
-  const [report, setReport]   = useState(null);
+  const [report, setReport]   = useState<QuarterlyReportData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError]     = useState('');
 
   const load = async () => {
     setLoading(true); setError('');
     try {
-      const data = await getQuarterlyReport(year, quarter);
-      setReport(data);
+      setReport(await getQuarterlyReport(year, quarter));
     } catch {
       setError('Failed to load report.');
     } finally {
@@ -24,7 +24,8 @@ export default function QuarterlyReport() {
     }
   };
 
-  const quarterLabel = (q) => ['Q1 (Jan–Mar)', 'Q2 (Apr–Jun)', 'Q3 (Jul–Sep)', 'Q4 (Oct–Dec)'][q - 1];
+  const quarterLabel = (q: number) =>
+    ['Q1 (Jan–Mar)', 'Q2 (Apr–Jun)', 'Q3 (Jul–Sep)', 'Q4 (Oct–Dec)'][q - 1];
 
   return (
     <div>
@@ -34,12 +35,15 @@ export default function QuarterlyReport() {
       <div className="filters" style={{ marginBottom: '1.5rem' }}>
         <div className="form-group">
           <label>Year</label>
-          <input type="number" value={year} min={2020} max={2030} onChange={e => setYear(+e.target.value)} style={{ width: 100 }} />
+          <input
+            type="number" value={year} min={2020} max={2030}
+            onChange={e => setYear(+e.target.value)} style={{ width: 100 }}
+          />
         </div>
         <div className="form-group">
           <label>Quarter</label>
           <select value={quarter} onChange={e => setQuarter(+e.target.value)}>
-            {[1,2,3,4].map(q => <option key={q} value={q}>{quarterLabel(q)}</option>)}
+            {[1, 2, 3, 4].map(q => <option key={q} value={q}>{quarterLabel(q)}</option>)}
           </select>
         </div>
         <button className="btn btn-primary" onClick={load}>Generate Report</button>
@@ -55,7 +59,7 @@ export default function QuarterlyReport() {
 
           {report.salespersons.length === 0
             ? <p className="empty">No sales recorded for this quarter.</p>
-            : report.salespersons.map((sp, i) => (
+            : report.salespersons.map(sp => (
               <div key={sp.salespersonId} className="card" style={{ marginBottom: '1.25rem' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                   <div>
@@ -78,14 +82,14 @@ export default function QuarterlyReport() {
 
                 <table>
                   <thead>
-                    <tr><th>Date</th><th>Product</th><th>Sale Price</th><th>Commission</th></tr>
+                    <tr><th>Date</th><th>Product</th><th>Price</th><th>Commission</th></tr>
                   </thead>
                   <tbody>
                     {sp.sales.map(s => (
                       <tr key={s.id}>
                         <td>{new Date(s.salesDate).toLocaleDateString()}</td>
                         <td>{s.product}</td>
-                        <td>{fmt$(s.salePrice)}</td>
+                        <td>{fmt$(s.price)}</td>
                         <td>{fmt$(s.commission)}</td>
                       </tr>
                     ))}

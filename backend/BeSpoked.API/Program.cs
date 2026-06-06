@@ -1,3 +1,4 @@
+using BeSpoked.API.Settings;
 using BeSpoked.Core.Interfaces;
 using BeSpoked.Infrastructure.Data;
 using BeSpoked.Infrastructure.Repositories;
@@ -15,6 +16,10 @@ builder.Services.AddSwaggerGen();
 // EF Core — SQL Server
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// Bonus settings — bound from appsettings.json
+builder.Services.Configure<QuarterlyBonusSettings>(
+    builder.Configuration.GetSection(QuarterlyBonusSettings.Section));
 
 // Repositories — registered as scoped (per HTTP request)
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));

@@ -1,9 +1,11 @@
 using BeSpoked.API.DTOs;
+using BeSpoked.API.Settings;
 using BeSpoked.Core.Entities;
 using BeSpoked.Core.Interfaces;
 using BeSpoked.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 namespace BeSpoked.API.Controllers;
 
@@ -14,12 +16,18 @@ public class SalesController : ControllerBase
     private readonly ISaleRepository _saleRepo;
     private readonly IRepository<Product> _productRepo;
     private readonly AppDbContext _context;
+    private readonly QuarterlyBonusSettings _bonus;
 
-    public SalesController(ISaleRepository saleRepo, IRepository<Product> productRepo, AppDbContext context)
+    public SalesController(
+        ISaleRepository saleRepo,
+        IRepository<Product> productRepo,
+        AppDbContext context,
+        IOptions<QuarterlyBonusSettings> bonusOptions)
     {
-        _saleRepo = saleRepo;
+        _saleRepo    = saleRepo;
         _productRepo = productRepo;
-        _context = context;
+        _context     = context;
+        _bonus       = bonusOptions.Value;
     }
 
     [HttpGet]
@@ -38,6 +46,10 @@ public class SalesController : ControllerBase
         var product = await _productRepo.GetByIdAsync(request.ProductId);
         if (product is null) return NotFound("Product not found.");
         if (product.QtyOnHand <= 0) return BadRequest("Product is out of stock.");
+
+        var salesperson = await _context.Salespersons.FindAsync(request.SalespersonId);
+        if (salesperson is null) return NotFound("Salesperson not found.");
+        if (salesperson.TerminationDate.HasValue) return BadRequest("Cannot create a sale for a terminated salesperson.");
 
         var discount = await _context.Discounts
             .Where(d => d.ProductId == request.ProductId
@@ -93,8 +105,8 @@ public class SalesController : ControllerBase
             r.TotalSales,
             r.TotalRevenue,
             r.TotalCommission,
-            i == 0 ? r.TotalCommission * 0.10m : 0,
-            i == 0,
+            i < _bonus.TopN ? r.TotalCommission * (_bonus.BonusPercentage / 100m) : 0,
+            i < _bonus.TopN,
             r.Sales.Select(ToDto)
         ));
 

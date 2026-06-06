@@ -6,6 +6,7 @@ import CustomerList from './components/Customers/CustomerList';
 import SaleList from './components/Sales/SaleList';
 import CreateSale from './components/Sales/CreateSale';
 import QuarterlyReport from './components/Reports/QuarterlyReport';
+import DiscountList from './components/Discounts/DiscountList';
 import './App.css';
 
 export default function App() {
@@ -19,6 +20,7 @@ export default function App() {
             <NavLink to="/products">Products</NavLink>
             <NavLink to="/customers">Customers</NavLink>
             <NavLink to="/sales">Sales</NavLink>
+            <NavLink to="/discounts">Discounts</NavLink>
             <NavLink to="/sales/new" className="nav-cta">+ New Sale</NavLink>
             <NavLink to="/report">Q Report</NavLink>
           </nav>
@@ -26,13 +28,14 @@ export default function App() {
 
         <main className="main">
           <Routes>
-            <Route path="/"               element={<SalespersonList />} />
-            <Route path="/salespersons"   element={<SalespersonList />} />
-            <Route path="/products"       element={<ProductList />} />
-            <Route path="/customers"      element={<CustomerList />} />
-            <Route path="/sales"          element={<SaleList />} />
-            <Route path="/sales/new"      element={<CreateSale />} />
-            <Route path="/report"         element={<QuarterlyReport />} />
+            <Route path="/"             element={<SalespersonList />} />
+            <Route path="/salespersons" element={<SalespersonList />} />
+            <Route path="/products"     element={<ProductList />} />
+            <Route path="/customers"    element={<CustomerList />} />
+            <Route path="/sales"        element={<SaleList />} />
+            <Route path="/sales/new"    element={<CreateSale />} />
+            <Route path="/discounts"    element={<DiscountList />} />
+            <Route path="/report"       element={<QuarterlyReport />} />
           </Routes>
         </main>
       </div>

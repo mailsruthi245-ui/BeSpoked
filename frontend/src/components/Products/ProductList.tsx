@@ -1,13 +1,30 @@
 import React, { useEffect, useState } from 'react';
 import { getProducts, updateProduct } from '../../services/api';
+import { Product } from '../../types';
 
-const fmt$ = (v) => `$${Number(v).toFixed(2)}`;
+const fmt$ = (v: number) => `$${Number(v).toFixed(2)}`;
+
+interface FieldDef {
+  key: keyof Product;
+  label: string;
+  type?: string;
+}
+
+const fields: FieldDef[] = [
+  { key: 'name',                 label: 'Name' },
+  { key: 'manufacturer',         label: 'Manufacturer' },
+  { key: 'style',                label: 'Style' },
+  { key: 'purchasePrice',        label: 'Purchase Price',  type: 'number' },
+  { key: 'salePrice',            label: 'Sale Price',      type: 'number' },
+  { key: 'qtyOnHand',            label: 'Qty On Hand',     type: 'number' },
+  { key: 'commissionPercentage', label: 'Commission %',    type: 'number' },
+];
 
 export default function ProductList() {
-  const [products, setProducts] = useState([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading]   = useState(true);
   const [error, setError]       = useState('');
-  const [editing, setEditing]   = useState(null);
+  const [editing, setEditing]   = useState<Product | null>(null);
 
   useEffect(() => {
     getProducts()
@@ -17,12 +34,13 @@ export default function ProductList() {
   }, []);
 
   const handleSave = async () => {
+    if (!editing) return;
     try {
       await updateProduct(editing.id, editing);
       setProducts(prev => prev.map(p => p.id === editing.id ? editing : p));
       setEditing(null);
     } catch (e) {
-      setError(e.message);
+      setError((e as Error).message);
     }
   };
 
@@ -50,7 +68,7 @@ export default function ProductList() {
                 <td>{fmt$(p.purchasePrice)}</td>
                 <td>{fmt$(p.salePrice)}</td>
                 <td>
-                  <span className={`badge ${p.qtyOnHand > 5 ? 'badge-green' : p.qtyOnHand > 0 ? 'badge-orange' : 'badge-orange'}`}>
+                  <span className={`badge ${p.qtyOnHand > 5 ? 'badge-green' : 'badge-orange'}`}>
                     {p.qtyOnHand}
                   </span>
                 </td>
@@ -70,21 +88,16 @@ export default function ProductList() {
           <div className="modal" onClick={e => e.stopPropagation()}>
             <h2>Edit Product</h2>
             <div className="form-grid">
-              {[
-                { key: 'name', label: 'Name' },
-                { key: 'manufacturer', label: 'Manufacturer' },
-                { key: 'style', label: 'Style' },
-                { key: 'purchasePrice', label: 'Purchase Price', type: 'number' },
-                { key: 'salePrice', label: 'Sale Price', type: 'number' },
-                { key: 'qtyOnHand', label: 'Qty On Hand', type: 'number' },
-                { key: 'commissionPercentage', label: 'Commission %', type: 'number' },
-              ].map(({ key, label, type = 'text' }) => (
+              {fields.map(({ key, label, type = 'text' }) => (
                 <div className="form-group" key={key}>
                   <label>{label}</label>
                   <input
                     type={type}
-                    value={editing[key] ?? ''}
-                    onChange={e => setEditing({ ...editing, [key]: type === 'number' ? +e.target.value : e.target.value })}
+                    value={editing[key] as string | number}
+                    onChange={e => setEditing({
+                      ...editing,
+                      [key]: type === 'number' ? +e.target.value : e.target.value,
+                    })}
                   />
                 </div>
               ))}

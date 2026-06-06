@@ -47,6 +47,16 @@ public record SaleDto(
     decimal CommissionPercentage
 );
 
+// ── Discount ──────────────────────────────────────────────────────────────────
+public record DiscountDto(
+    int Id,
+    int ProductId,
+    string ProductName,
+    DateTime BeginDate,
+    DateTime EndDate,
+    decimal DiscountPercentage
+);
+
 // ── Quarterly Report ──────────────────────────────────────────────────────────
 public record QuarterlyReportDto(
     int Year,

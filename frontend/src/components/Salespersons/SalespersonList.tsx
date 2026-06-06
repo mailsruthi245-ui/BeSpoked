@@ -1,11 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { getSalespersons, updateSalesperson } from '../../services/api';
+import { getSalespersons, createSalesperson, updateSalesperson } from '../../services/api';
+import { Salesperson } from '../../types';
+
+type StringField = 'firstName' | 'lastName' | 'address' | 'phone' | 'manager';
+
+const textFields: Array<{ key: StringField; label: string }> = [
+  { key: 'firstName', label: 'First Name' },
+  { key: 'lastName',  label: 'Last Name' },
+  { key: 'address',   label: 'Address' },
+  { key: 'phone',     label: 'Phone' },
+  { key: 'manager',   label: 'Manager' },
+];
+
+const BLANK: Salesperson = {
+  id: 0, firstName: '', lastName: '', address: '', phone: '',
+  startDate: new Date().toISOString().split('T')[0],
+  terminationDate: null, manager: '',
+};
 
 export default function SalespersonList() {
-  const [salespersons, setSalespersons] = useState([]);
+  const [salespersons, setSalespersons] = useState<Salesperson[]>([]);
   const [loading, setLoading]           = useState(true);
   const [error, setError]               = useState('');
-  const [editing, setEditing]           = useState(null);   // the row being edited
+  const [editing, setEditing]           = useState<Salesperson | null>(null);
 
   useEffect(() => {
     getSalespersons()
@@ -14,17 +31,28 @@ export default function SalespersonList() {
       .finally(() => setLoading(false));
   }, []);
 
+  const set = (key: keyof Salesperson, val: string | null) =>
+    setEditing(prev => prev ? { ...prev, [key]: val } : null);
+
   const handleSave = async () => {
+    if (!editing) return;
+    setError('');
     try {
-      await updateSalesperson(editing.id, editing);
-      setSalespersons(prev => prev.map(s => s.id === editing.id ? editing : s));
+      if (editing.id === 0) {
+        const { id: _id, ...payload } = editing;
+        const created = await createSalesperson(payload);
+        setSalespersons(prev => [...prev, created]);
+      } else {
+        await updateSalesperson(editing.id, editing);
+        setSalespersons(prev => prev.map(s => s.id === editing.id ? editing : s));
+      }
       setEditing(null);
     } catch (e) {
-      setError(e.message);
+      setError((e as Error).message);
     }
   };
 
-  const fmt = (date) => date ? new Date(date).toLocaleDateString() : '—';
+  const fmt = (date: string | null) => date ? new Date(date).toLocaleDateString() : '—';
 
   if (loading) return <p className="loading">Loading salespersons…</p>;
 
@@ -32,6 +60,9 @@ export default function SalespersonList() {
     <div>
       <div className="page-header">
         <h1>Salespersons</h1>
+        <button className="btn btn-primary" onClick={() => setEditing({ ...BLANK })}>
+          + New Salesperson
+        </button>
       </div>
 
       {error && <p className="error">{error}</p>}
@@ -69,29 +100,38 @@ export default function SalespersonList() {
         {salespersons.length === 0 && <p className="empty">No salespersons found.</p>}
       </div>
 
-      {/* Edit Modal */}
       {editing && (
         <div className="modal-overlay" onClick={() => setEditing(null)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
-            <h2>Edit Salesperson</h2>
+            <h2>{editing.id === 0 ? 'New Salesperson' : 'Edit Salesperson'}</h2>
             <div className="form-grid">
-              {['firstName','lastName','address','phone','manager'].map(field => (
-                <div className="form-group" key={field}>
-                  <label>{field.replace(/([A-Z])/g, ' $1')}</label>
+              {textFields.map(({ key, label }) => (
+                <div className="form-group" key={key}>
+                  <label>{label}</label>
                   <input
-                    value={editing[field] || ''}
-                    onChange={e => setEditing({ ...editing, [field]: e.target.value })}
+                    value={editing[key]}
+                    onChange={e => set(key, e.target.value)}
                   />
                 </div>
               ))}
               <div className="form-group">
-                <label>Termination Date</label>
+                <label>Start Date</label>
                 <input
                   type="date"
-                  value={editing.terminationDate ? editing.terminationDate.split('T')[0] : ''}
-                  onChange={e => setEditing({ ...editing, terminationDate: e.target.value || null })}
+                  value={editing.startDate.split('T')[0]}
+                  onChange={e => set('startDate', e.target.value)}
                 />
               </div>
+              {editing.id !== 0 && (
+                <div className="form-group">
+                  <label>Termination Date</label>
+                  <input
+                    type="date"
+                    value={editing.terminationDate ? editing.terminationDate.split('T')[0] : ''}
+                    onChange={e => set('terminationDate', e.target.value || null)}
+                  />
+                </div>
+              )}
             </div>
             <div className="modal-actions">
               <button className="btn btn-secondary" onClick={() => setEditing(null)}>Cancel</button>

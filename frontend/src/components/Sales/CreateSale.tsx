@@ -1,16 +1,24 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProducts, getSalespersons, getCustomers, createSale } from '../../services/api';
+import { Product, Salesperson, Customer } from '../../types';
+
+interface SaleForm {
+  productId: string;
+  salespersonId: string;
+  customerId: string;
+  salesDate: string;
+}
 
 export default function CreateSale() {
   const navigate = useNavigate();
-  const [products, setProducts]         = useState([]);
-  const [salespersons, setSalespersons] = useState([]);
-  const [customers, setCustomers]       = useState([]);
+  const [products, setProducts]         = useState<Product[]>([]);
+  const [salespersons, setSalespersons] = useState<Salesperson[]>([]);
+  const [customers, setCustomers]       = useState<Customer[]>([]);
   const [error, setError]               = useState('');
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<SaleForm>({
     productId: '', salespersonId: '', customerId: '',
-    salesDate: new Date().toISOString().split('T')[0]
+    salesDate: new Date().toISOString().split('T')[0],
   });
 
   useEffect(() => {
@@ -18,24 +26,27 @@ export default function CreateSale() {
       .then(([p, s, c]) => { setProducts(p); setSalespersons(s); setCustomers(c); });
   }, []);
 
-  const set = (key, val) => setForm(f => ({ ...f, [key]: val }));
+  const set = (key: keyof SaleForm, val: string) => setForm(f => ({ ...f, [key]: val }));
 
   const selectedProduct = products.find(p => p.id === +form.productId);
+  const activeSalespersons = salespersons.filter(s => !s.terminationDate);
 
   const handleSubmit = async () => {
     if (!form.productId || !form.salespersonId || !form.customerId || !form.salesDate) {
       return setError('All fields are required.');
     }
     try {
-      await createSale({ ...form, productId: +form.productId, salespersonId: +form.salespersonId, customerId: +form.customerId });
+      await createSale({
+        productId:     +form.productId,
+        salespersonId: +form.salespersonId,
+        customerId:    +form.customerId,
+        salesDate:     form.salesDate,
+      });
       navigate('/sales');
     } catch (e) {
-      setError(e.message);
+      setError((e as Error).message);
     }
   };
-
-  // Filter out terminated salespersons
-  const activeSalespersons = salespersons.filter(s => !s.terminationDate);
 
   return (
     <div>

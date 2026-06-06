@@ -1,24 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { getSales } from '../../services/api';
+import { Sale } from '../../types';
 
-const fmt$ = (v) => `$${Number(v).toFixed(2)}`;
+const fmt$ = (v: number) => `$${Number(v).toFixed(2)}`;
 
 export default function SaleList() {
-  const [sales, setSales]   = useState([]);
+  const [sales, setSales]     = useState<Sale[]>([]);
   const [loading, setLoading] = useState(true);
-  const [from, setFrom]     = useState('');
-  const [to, setTo]         = useState('');
-  const [error, setError]   = useState('');
+  const [from, setFrom]       = useState('');
+  const [to, setTo]           = useState('');
+  const [error, setError]     = useState('');
 
-  const load = (f, t) => {
+  const load = (f?: string, t?: string) => {
     setLoading(true);
-    getSales(f || undefined, t || undefined)
+    getSales(f, t)
       .then(setSales)
       .catch(() => setError('Failed to load sales.'))
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => { load(); }, []); // intentional empty deps — load only on mount
 
   return (
     <div>
@@ -54,8 +55,11 @@ export default function SaleList() {
                 <td>{s.customer}</td>
                 <td>{s.salesperson}</td>
                 <td>{fmt$(s.price)}</td>
-                <td>{s.discountApplied > 0 ? <span className="badge badge-orange">{s.discountApplied}% off</span> : '—'}</td>
-                <td className="badge badge-green">{fmt$(s.commission)}</td>
+                <td>{s.discountApplied > 0
+                  ? <span className="badge badge-orange">{s.discountApplied}% off</span>
+                  : '—'}
+                </td>
+                <td><span className="badge badge-green">{fmt$(s.commission)}</span></td>
               </tr>
             ))}
           </tbody>
