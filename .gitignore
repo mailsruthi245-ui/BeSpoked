@@ -1,0 +1,14 @@
+# Node
+node_modules/
+frontend/build/
+
+# .NET
+**/bin/
+**/obj/
+**/.vs/
+
+# Environment
+appsettings.Development.json
+
+# OS
+.DS_Store
