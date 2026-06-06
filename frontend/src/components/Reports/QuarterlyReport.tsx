@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { getQuarterlyReport } from '../../services/api';
 import { QuarterlyReportData } from '../../types';
+import './QuarterlyReport.css';
 
 const fmt$ = (v: number) => `$${Number(v).toFixed(2)}`;
 const currentYear    = new Date().getFullYear();
@@ -32,12 +33,13 @@ export default function QuarterlyReport() {
       <div className="page-header"><h1>Quarterly Commission Report</h1></div>
       {error && <p className="error">{error}</p>}
 
-      <div className="filters" style={{ marginBottom: '1.5rem' }}>
+      <div className="filters report-filters">
         <div className="form-group">
           <label>Year</label>
           <input
             type="number" value={year} min={2020} max={2030}
-            onChange={e => setYear(+e.target.value)} style={{ width: 100 }}
+            onChange={e => setYear(+e.target.value)}
+            className="year-input"
           />
         </div>
         <div className="form-group">
@@ -53,28 +55,28 @@ export default function QuarterlyReport() {
 
       {report && !loading && (
         <div>
-          <h2 style={{ marginBottom: '1rem', fontSize: '1.1rem', color: '#374151' }}>
+          <h2 className="report-subtitle">
             {quarterLabel(report.quarter)} {report.year} — Commission Summary
           </h2>
 
           {report.salespersons.length === 0
             ? <p className="empty">No sales recorded for this quarter.</p>
             : report.salespersons.map(sp => (
-              <div key={sp.salespersonId} className="card" style={{ marginBottom: '1.25rem' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <div key={sp.salespersonId} className="card salesperson-card">
+                <div className="salesperson-header">
                   <div>
-                    <span style={{ fontWeight: 700, fontSize: '1rem' }}>{sp.name}</span>
+                    <span className="salesperson-name">{sp.name}</span>
                     {sp.isTopSalesperson && (
-                      <span className="badge badge-gold" style={{ marginLeft: '0.75rem' }}>🏆 Top Salesperson</span>
+                      <span className="badge badge-gold">🏆 Top Salesperson</span>
                     )}
                   </div>
-                  <div style={{ textAlign: 'right', fontSize: '0.875rem' }}>
+                  <div className="salesperson-stats">
                     <div><strong>Sales:</strong> {sp.totalSales}</div>
                     <div><strong>Revenue:</strong> {fmt$(sp.totalRevenue)}</div>
                     <div><strong>Commission:</strong> {fmt$(sp.totalCommission)}</div>
                     {sp.quarterlyBonus > 0 && (
-                      <div style={{ color: '#854d0e', fontWeight: 700 }}>
-                        🎁 Quarterly Bonus: {fmt$(sp.quarterlyBonus)}
+                      <div className="bonus-highlight">
+                        Quarterly Bonus: {fmt$(sp.quarterlyBonus)}
                       </div>
                     )}
                   </div>

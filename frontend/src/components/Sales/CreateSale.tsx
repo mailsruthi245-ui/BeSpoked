@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProducts, getSalespersons, getCustomers, createSale } from '../../services/api';
 import { Product, Salesperson, Customer } from '../../types';
+import './CreateSale.css';
 
 interface SaleForm {
   productId: string;
@@ -53,9 +54,9 @@ export default function CreateSale() {
       <div className="page-header"><h1>New Sale</h1></div>
       {error && <p className="error">{error}</p>}
 
-      <div className="card" style={{ maxWidth: 600 }}>
+      <div className="card sale-card">
         <div className="form-grid">
-          <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+          <div className="form-group form-group--full">
             <label>Product</label>
             <select value={form.productId} onChange={e => set('productId', e.target.value)}>
               <option value="">— Select a product —</option>
@@ -68,9 +69,9 @@ export default function CreateSale() {
           </div>
 
           {selectedProduct && (
-            <div className="form-group" style={{ gridColumn: '1 / -1' }}>
+            <div className="form-group form-group--full">
               <label>Selected Product Details</label>
-              <div style={{ background: '#f5f5f4', padding: '0.75rem', borderRadius: 6, fontSize: '0.875rem' }}>
+              <div className="product-preview">
                 <strong>{selectedProduct.name}</strong> by {selectedProduct.manufacturer} &nbsp;|&nbsp;
                 Style: {selectedProduct.style} &nbsp;|&nbsp;
                 Commission: {selectedProduct.commissionPercentage}%
@@ -104,11 +105,11 @@ export default function CreateSale() {
           </div>
         </div>
 
-        <p style={{ marginTop: '1rem', fontSize: '0.8rem', color: '#6b7280' }}>
-          💡 Any active discounts for the selected product and date will be applied automatically.
+        <p className="discount-hint">
+          Any active discounts for the selected product and date will be applied automatically.
         </p>
 
-        <div className="modal-actions" style={{ marginTop: '1.5rem' }}>
+        <div className="modal-actions sale-actions">
           <button className="btn btn-secondary" onClick={() => navigate('/sales')}>Cancel</button>
           <button className="btn btn-primary" onClick={handleSubmit}>Create Sale</button>
         </div>
