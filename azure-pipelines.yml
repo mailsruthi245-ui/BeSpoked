@@ -71,6 +71,7 @@ stages:
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
+                ACR_PASS=$(az acr credential show --name $(acrName) --query "passwords[0].value" -o tsv)
                 if az containerapp show --name bespoked-api --resource-group $(resourceGroup) &>/dev/null; then
                   az containerapp update \
                     --name bespoked-api \
@@ -84,7 +85,7 @@ stages:
                     --image $(acrLoginServer)/$(apiImageName):$(Build.BuildId) \
                     --registry-server $(acrLoginServer) \
                     --registry-username $(acrName) \
-                    --registry-password $(acrPassword) \
+                    --registry-password "$ACR_PASS" \
                     --target-port 8080 \
                     --ingress external \
                     --env-vars \
@@ -99,6 +100,7 @@ stages:
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
+                ACR_PASS=$(az acr credential show --name $(acrName) --query "passwords[0].value" -o tsv)
                 if az containerapp show --name bespoked-frontend --resource-group $(resourceGroup) &>/dev/null; then
                   az containerapp update \
                     --name bespoked-frontend \
@@ -112,7 +114,7 @@ stages:
                     --image $(acrLoginServer)/$(frontendImageName):$(Build.BuildId) \
                     --registry-server $(acrLoginServer) \
                     --registry-username $(acrName) \
-                    --registry-password $(acrPassword) \
+                    --registry-password "$ACR_PASS" \
                     --target-port 80 \
                     --ingress external
                 fi
