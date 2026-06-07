@@ -57,6 +57,13 @@ public record DiscountDto(
     decimal DiscountPercentage
 );
 
+public record DiscountRequest(
+    int ProductId,
+    DateTime BeginDate,
+    DateTime EndDate,
+    decimal DiscountPercentage
+);
+
 // ── Quarterly Report ──────────────────────────────────────────────────────────
 public record QuarterlyReportDto(
     int Year,

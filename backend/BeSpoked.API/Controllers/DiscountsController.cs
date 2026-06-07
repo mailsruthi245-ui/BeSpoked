@@ -25,10 +25,18 @@ public class DiscountsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> Create(Discount discount)
+    public async Task<IActionResult> Create(DiscountRequest request)
     {
-        if (discount.EndDate < discount.BeginDate)
+        if (request.EndDate < request.BeginDate)
             return BadRequest("End date must be on or after begin date.");
+
+        var discount = new Discount
+        {
+            ProductId          = request.ProductId,
+            BeginDate          = request.BeginDate,
+            EndDate            = request.EndDate,
+            DiscountPercentage = request.DiscountPercentage
+        };
 
         await _repo.AddAsync(discount);
         var created = await _repo.GetByIdWithProductAsync(discount.Id);
@@ -36,11 +44,19 @@ public class DiscountsController : ControllerBase
     }
 
     [HttpPut("{id}")]
-    public async Task<IActionResult> Update(int id, Discount discount)
+    public async Task<IActionResult> Update(int id, DiscountRequest request)
     {
-        if (id != discount.Id) return BadRequest();
-        if (discount.EndDate < discount.BeginDate)
+        if (request.EndDate < request.BeginDate)
             return BadRequest("End date must be on or after begin date.");
+
+        var discount = new Discount
+        {
+            Id                 = id,
+            ProductId          = request.ProductId,
+            BeginDate          = request.BeginDate,
+            EndDate            = request.EndDate,
+            DiscountPercentage = request.DiscountPercentage
+        };
 
         await _repo.UpdateAsync(discount);
         return NoContent();
