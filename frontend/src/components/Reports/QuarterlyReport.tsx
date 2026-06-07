@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { getQuarterlyReport } from '../../services/api';
 import { QuarterlyReportData } from '../../types';
-import './QuarterlyReport.css';
 
 const fmt$ = (v: number) => `$${Number(v).toFixed(2)}`;
 const currentYear    = new Date().getFullYear();

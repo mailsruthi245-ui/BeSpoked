@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProducts, getSalespersons, getCustomers, createSale } from '../../services/api';
 import { Product, Salesperson, Customer } from '../../types';
-import './CreateSale.css';
 
 interface SaleForm {
   productId: string;
