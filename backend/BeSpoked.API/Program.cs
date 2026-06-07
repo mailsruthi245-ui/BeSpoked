@@ -33,6 +33,13 @@ var app = builder.Build();
 app.UseExceptionHandler(errApp =>
     errApp.Run(async ctx =>
     {
+        var ex = ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
+        var logger = ctx.RequestServices
+                        .GetRequiredService<ILoggerFactory>()
+                        .CreateLogger("GlobalExceptionHandler");
+        logger.LogError(ex, "Unhandled exception on {Method} {Path}",
+                        ctx.Request.Method, ctx.Request.Path);
+
         ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
         ctx.Response.ContentType = "application/json";
         await ctx.Response.WriteAsJsonAsync(new { error = "An unexpected error occurred." });
