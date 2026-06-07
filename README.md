@@ -8,7 +8,7 @@ A full-stack sales tracking app for BeSpoked, a high-end bicycle shop. Tracks sa
 |-------|-----------|
 | Backend | .NET 8 Web API (C#) |
 | ORM | Entity Framework Core 8 (Code-First) |
-| Database | SQL Server (LocalDB for dev) |
+| Database | SQL Server (Docker/local) · Azure SQL Database (production) |
 | Frontend | React 18 + TypeScript + React Router 6 |
 | Architecture | 3-tier: Core → Infrastructure → API |
 
@@ -25,16 +25,24 @@ BeSpoked/
 │   ├── BeSpoked.Infrastructure/  # EF Core, repositories
 │   │   ├── Data/AppDbContext.cs  # DbContext with fluent config + seed data
 │   │   └── Repositories/        # Generic + Sale-specific repositories
-│   └── BeSpoked.API/             # ASP.NET Web API controllers
-│       ├── Controllers/          # Salespersons, Products, Customers, Sales, Discounts
-│       ├── DTOs/                 # Response record types
-│       ├── Settings/             # QuarterlyBonusSettings (appsettings.json binding)
-│       └── Program.cs            # DI, CORS, EF migration on startup
+│   ├── BeSpoked.API/             # ASP.NET Web API controllers
+│   │   ├── Controllers/          # Salespersons, Products, Customers, Sales, Discounts
+│   │   ├── DTOs/                 # Response record types
+│   │   ├── Settings/             # QuarterlyBonusSettings (appsettings.json binding)
+│   │   └── Program.cs            # DI, CORS, global exception handler, EF migration on startup
+│   └── BeSpoked.Tests/           # xUnit test suite
+│       ├── Controllers/          # Controller unit tests (Moq)
+│       ├── Repositories/         # Repository integration tests (EF InMemory)
+│       └── Domain/               # BonusCalculator + Sale computed property tests
 └── frontend/
     └── src/
         ├── types.ts              # Shared TypeScript interfaces matching backend DTOs
         ├── services/api.ts       # All API calls in one place
+        ├── hooks/
+        │   ├── useFetch.ts       # Generic data fetching hook
+        │   └── useEditState.ts   # Create/edit form state hook
         ├── components/
+        │   ├── common/           # Modal, FormField (shared UI primitives)
         │   ├── Salespersons/     # List + create/edit modal
         │   ├── Products/         # List + edit modal
         │   ├── Customers/        # List + create modal
