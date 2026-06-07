@@ -109,7 +109,10 @@ stages:
                   az containerapp update \
                     --name bespoked-api \
                     --resource-group $(resourceGroup) \
-                    --image $(acrLoginServer)/$(apiImageName):$(Build.BuildId)
+                    --image $(acrLoginServer)/$(apiImageName):$(Build.BuildId) \
+                    --set-env-vars \
+                      ConnectionStrings__DefaultConnection="$(dbConnectionString)" \
+                      ASPNETCORE_ENVIRONMENT=Development
                 else
                   az containerapp create \
                     --name bespoked-api \
