@@ -83,7 +83,8 @@ stages:
                     --environment bespoked-env \
                     --image $(acrLoginServer)/$(apiImageName):$(Build.BuildId) \
                     --registry-server $(acrLoginServer) \
-                    --registry-identity system \
+                    --registry-username $(acrName) \
+                    --registry-password $(acrPassword) \
                     --target-port 8080 \
                     --ingress external \
                     --env-vars \
@@ -110,7 +111,8 @@ stages:
                     --environment bespoked-env \
                     --image $(acrLoginServer)/$(frontendImageName):$(Build.BuildId) \
                     --registry-server $(acrLoginServer) \
-                    --registry-identity system \
+                    --registry-username $(acrName) \
+                    --registry-password $(acrPassword) \
                     --target-port 80 \
                     --ingress external
                 fi
