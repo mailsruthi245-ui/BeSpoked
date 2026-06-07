@@ -51,7 +51,8 @@ public class SalesController : ControllerBase
 
         var salesperson = await _salespersonRepo.GetByIdAsync(request.SalespersonId);
         if (salesperson is null) return NotFound("Salesperson not found.");
-        if (salesperson.TerminationDate.HasValue) return BadRequest("Cannot create a sale for a terminated salesperson.");
+        if (salesperson.TerminationDate.HasValue && salesperson.TerminationDate.Value.Date <= DateTime.Today)
+            return BadRequest("Cannot create a sale for a terminated salesperson.");
 
         var discount = await _discountRepo.GetActiveForProductAsync(request.ProductId, request.SalesDate);
 

@@ -62,7 +62,7 @@ export default function SalespersonList() {
                 <td>{sp.address}</td>
                 <td>{fmt(sp.startDate)}</td>
                 <td>
-                  {sp.terminationDate
+                  {sp.terminationDate && new Date(sp.terminationDate) <= new Date()
                     ? <span className="badge badge-orange">Terminated {fmt(sp.terminationDate)}</span>
                     : <span className="badge badge-green">Active</span>}
                 </td>

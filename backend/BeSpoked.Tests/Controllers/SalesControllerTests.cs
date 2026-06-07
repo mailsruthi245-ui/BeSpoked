@@ -94,6 +94,34 @@ public class SalesControllerTests
         Assert.IsType<BadRequestObjectResult>(result);
     }
 
+    [Fact]
+    public async Task Create_ReturnsOk_WhenSalespersonHasFutureTerminationDate()
+    {
+        var productRepo = new Mock<IRepository<Product>>();
+        productRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(MakeProduct(1));
+
+        var sp = MakeSalesperson(1);
+        sp.TerminationDate = DateTime.Today.AddMonths(3);
+        var salespersonRepo = new Mock<IRepository<Salesperson>>();
+        salespersonRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(sp);
+
+        var saleRepo = new Mock<ISaleRepository>();
+        saleRepo.Setup(r => r.AddAsync(It.IsAny<Sale>())).ReturnsAsync(new Sale());
+
+        var discountRepo = new Mock<IDiscountRepository>();
+        discountRepo.Setup(r => r.GetActiveForProductAsync(It.IsAny<int>(), It.IsAny<DateTime>()))
+                    .ReturnsAsync((Discount?)null);
+
+        var result = await CreateController(
+            productRepo: productRepo.Object,
+            salespersonRepo: salespersonRepo.Object,
+            saleRepo: saleRepo.Object,
+            discountRepo: discountRepo.Object)
+            .Create(new CreateSaleRequest(1, 1, 1, DateTime.Today));
+
+        Assert.IsType<CreatedAtActionResult>(result);
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(-1)]

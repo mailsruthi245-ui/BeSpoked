@@ -34,11 +34,11 @@ export default function SaleList() {
       <div className="filters">
         <div className="form-group">
           <label>From</label>
-          <input type="date" value={from} onChange={e => setFrom(e.target.value)} />
+          <input type="date" value={from} max={to || undefined} onChange={e => setFrom(e.target.value)} />
         </div>
         <div className="form-group">
           <label>To</label>
-          <input type="date" value={to} onChange={e => setTo(e.target.value)} />
+          <input type="date" value={to} min={from || undefined} onChange={e => setTo(e.target.value)} />
         </div>
         <button className="btn btn-primary" onClick={() => load(from, to)}>Filter</button>
         <button className="btn btn-secondary" onClick={() => { setFrom(''); setTo(''); load(); }}>Clear</button>
