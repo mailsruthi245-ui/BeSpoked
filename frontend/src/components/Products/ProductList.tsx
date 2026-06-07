@@ -1,22 +1,11 @@
-import { useState } from 'react';
 import { getProducts, createProduct, updateProduct } from '../../services/api';
 import { Product } from '../../types';
 import { useFetch } from '../../hooks/useFetch';
+import { useEditState } from '../../hooks/useEditState';
 import Modal from '../common/Modal';
+import FormField from '../common/FormField';
 
 const fmt$ = (v: number) => `$${Number(v).toFixed(2)}`;
-
-interface FieldDef { key: keyof Product; label: string; type?: string; }
-
-const fields: FieldDef[] = [
-  { key: 'name',                 label: 'Name' },
-  { key: 'manufacturer',         label: 'Manufacturer' },
-  { key: 'style',                label: 'Style' },
-  { key: 'purchasePrice',        label: 'Purchase Price',  type: 'number' },
-  { key: 'salePrice',            label: 'Sale Price',      type: 'number' },
-  { key: 'qtyOnHand',            label: 'Qty On Hand',     type: 'number' },
-  { key: 'commissionPercentage', label: 'Commission %',    type: 'number' },
-];
 
 const BLANK: Product = {
   id: 0, name: '', manufacturer: '', style: '',
@@ -25,7 +14,7 @@ const BLANK: Product = {
 
 export default function ProductList() {
   const { data: products, loading, error, setData: setProducts, setError } = useFetch<Product[]>(getProducts);
-  const [editing, setEditing] = useState<Product | null>(null);
+  const { editing, setEditing, set } = useEditState<Product>();
 
   const handleSave = async () => {
     if (!editing) return;
@@ -92,20 +81,13 @@ export default function ProductList() {
           onClose={() => setEditing(null)}
           onSave={handleSave}
         >
-          {fields.map(({ key, label, type = 'text' }) => (
-            <div className="form-group" key={key}>
-              <label>{label}</label>
-              <input
-                type={type}
-                value={editing[key] as string | number}
-                onChange={e => setEditing({
-                  ...editing,
-                  [key]: type === 'number' ? +e.target.value : e.target.value,
-                })}
-                onFocus={e => { if (type === 'number' && +e.target.value === 0) e.target.select(); }}
-              />
-            </div>
-          ))}
+          <FormField label="Name"         value={editing.name}                 onChange={val => set('name', val)} />
+          <FormField label="Manufacturer" value={editing.manufacturer}         onChange={val => set('manufacturer', val)} />
+          <FormField label="Style"        value={editing.style}                onChange={val => set('style', val)} />
+          <FormField label="Purchase Price"      type="number" value={editing.purchasePrice}        onChange={val => set('purchasePrice', +val)} />
+          <FormField label="Sale Price"          type="number" value={editing.salePrice}             onChange={val => set('salePrice', +val)} />
+          <FormField label="Qty On Hand"         type="number" value={editing.qtyOnHand}             onChange={val => set('qtyOnHand', +val)} />
+          <FormField label="Commission %"        type="number" value={editing.commissionPercentage}  onChange={val => set('commissionPercentage', +val)} />
         </Modal>
       )}
     </div>

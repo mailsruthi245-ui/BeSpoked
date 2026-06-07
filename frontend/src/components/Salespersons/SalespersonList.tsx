@@ -1,18 +1,9 @@
-import { useState } from 'react';
 import { getSalespersons, createSalesperson, updateSalesperson } from '../../services/api';
 import { Salesperson } from '../../types';
 import { useFetch } from '../../hooks/useFetch';
+import { useEditState } from '../../hooks/useEditState';
 import Modal from '../common/Modal';
-
-type StringField = 'firstName' | 'lastName' | 'address' | 'phone' | 'manager';
-
-const textFields: Array<{ key: StringField; label: string }> = [
-  { key: 'firstName', label: 'First Name' },
-  { key: 'lastName',  label: 'Last Name' },
-  { key: 'address',   label: 'Address' },
-  { key: 'phone',     label: 'Phone' },
-  { key: 'manager',   label: 'Manager' },
-];
+import FormField from '../common/FormField';
 
 const BLANK: Salesperson = {
   id: 0, firstName: '', lastName: '', address: '', phone: '',
@@ -20,12 +11,11 @@ const BLANK: Salesperson = {
   terminationDate: null, manager: '',
 };
 
+const fmt = (date: string | null) => date ? new Date(date).toLocaleDateString() : '—';
+
 export default function SalespersonList() {
   const { data: salespersons, loading, error, setData: setSalespersons, setError } = useFetch<Salesperson[]>(getSalespersons);
-  const [editing, setEditing] = useState<Salesperson | null>(null);
-
-  const set = (key: keyof Salesperson, val: string | null) =>
-    setEditing(prev => prev ? { ...prev, [key]: val } : null);
+  const { editing, setEditing, set } = useEditState<Salesperson>();
 
   const handleSave = async () => {
     if (!editing) return;
@@ -45,17 +35,13 @@ export default function SalespersonList() {
     }
   };
 
-  const fmt = (date: string | null) => date ? new Date(date).toLocaleDateString() : '—';
-
   if (loading) return <p className="loading">Loading salespersons…</p>;
 
   return (
     <div>
       <div className="page-header">
         <h1>Salespersons</h1>
-        <button className="btn btn-primary" onClick={() => setEditing({ ...BLANK })}>
-          + New Salesperson
-        </button>
+        <button className="btn btn-primary" onClick={() => setEditing({ ...BLANK })}>+ New Salesperson</button>
       </div>
 
       {error && <p className="error">{error}</p>}
@@ -82,9 +68,7 @@ export default function SalespersonList() {
                 </td>
                 <td>{sp.manager}</td>
                 <td>
-                  <button className="btn btn-secondary btn-sm" onClick={() => setEditing({ ...sp })}>
-                    Edit
-                  </button>
+                  <button className="btn btn-secondary btn-sm" onClick={() => setEditing({ ...sp })}>Edit</button>
                 </td>
               </tr>
             ))}
@@ -99,29 +83,19 @@ export default function SalespersonList() {
           onClose={() => setEditing(null)}
           onSave={handleSave}
         >
-          {textFields.map(({ key, label }) => (
-            <div className="form-group" key={key}>
-              <label>{label}</label>
-              <input value={editing[key]} onChange={e => set(key, e.target.value)} />
-            </div>
-          ))}
-          <div className="form-group">
-            <label>Start Date</label>
-            <input
-              type="date"
-              value={editing.startDate.split('T')[0]}
-              onChange={e => set('startDate', e.target.value)}
-            />
-          </div>
+          <FormField label="First Name"  value={editing.firstName} onChange={val => set('firstName', val)} />
+          <FormField label="Last Name"   value={editing.lastName}  onChange={val => set('lastName', val)} />
+          <FormField label="Address"     value={editing.address}   onChange={val => set('address', val)} />
+          <FormField label="Phone"       value={editing.phone}     onChange={val => set('phone', val)} />
+          <FormField label="Manager"     value={editing.manager}   onChange={val => set('manager', val)} />
+          <FormField label="Start Date"  type="date" value={editing.startDate.split('T')[0]} onChange={val => set('startDate', val)} />
           {editing.id !== 0 && (
-            <div className="form-group">
-              <label>Termination Date</label>
-              <input
-                type="date"
-                value={editing.terminationDate ? editing.terminationDate.split('T')[0] : ''}
-                onChange={e => set('terminationDate', e.target.value || null)}
-              />
-            </div>
+            <FormField
+              label="Termination Date"
+              type="date"
+              value={editing.terminationDate ? editing.terminationDate.split('T')[0] : ''}
+              onChange={val => set('terminationDate', val || null)}
+            />
           )}
         </Modal>
       )}

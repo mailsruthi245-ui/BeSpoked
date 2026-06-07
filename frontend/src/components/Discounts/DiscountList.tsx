@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { getDiscounts, createDiscount, updateDiscount, deleteDiscount, getProducts } from '../../services/api';
 import { Discount, Product } from '../../types';
 import { useFetch } from '../../hooks/useFetch';
+import { useEditState } from '../../hooks/useEditState';
 import Modal from '../common/Modal';
+import FormField from '../common/FormField';
 
 const fmtDate = (d: string) => new Date(d).toLocaleDateString();
 const toInput  = (d: string) => new Date(d).toISOString().split('T')[0];
@@ -15,21 +17,18 @@ interface DiscountForm {
   discountPercentage: string;
 }
 
-const EMPTY_FORM: DiscountForm = {
-  id: 0, productId: '', beginDate: '', endDate: '', discountPercentage: '',
-};
+const BLANK: DiscountForm = { id: 0, productId: '', beginDate: '', endDate: '', discountPercentage: '' };
 
 export default function DiscountList() {
-  const { data: discounts, loading: dLoading, error: dError, setData: setDiscounts } = useFetch<Discount[]>(getDiscounts);
-  const { data: products,  loading: pLoading, error: pError } = useFetch<Product[]>(getProducts);
+  const { data: discounts, loading: dLoading, error: discountError, setData: setDiscounts } = useFetch<Discount[]>(getDiscounts);
+  const { data: products,  loading: pLoading, error: productError  } = useFetch<Product[]>(getProducts);
+  const { editing: modal, setEditing: setModal, set } = useEditState<DiscountForm>();
   const [actionError, setActionError] = useState('');
-  const [modal, setModal] = useState<DiscountForm | null>(null);
 
   const loading = dLoading || pLoading;
-  const error   = dError || pError || actionError;
+  const error   = discountError || productError || actionError;
 
-  const openCreate = () => setModal({ ...EMPTY_FORM });
-  const openEdit   = (d: Discount) => setModal({
+  const openEdit = (d: Discount) => setModal({
     id: d.id, productId: String(d.productId),
     beginDate: toInput(d.beginDate), endDate: toInput(d.endDate),
     discountPercentage: String(d.discountPercentage),
@@ -70,16 +69,13 @@ export default function DiscountList() {
     }
   };
 
-  const set = (key: keyof DiscountForm, val: string) =>
-    setModal(prev => prev ? { ...prev, [key]: val } : null);
-
   if (loading) return <p className="loading">Loading discounts…</p>;
 
   return (
     <div>
       <div className="page-header">
         <h1>Discounts</h1>
-        <button className="btn btn-primary" onClick={openCreate}>+ New Discount</button>
+        <button className="btn btn-primary" onClick={() => setModal({ ...BLANK })}>+ New Discount</button>
       </div>
       {error && <p className="error">{error}</p>}
 
@@ -122,18 +118,9 @@ export default function DiscountList() {
               ))}
             </select>
           </div>
-          <div className="form-group">
-            <label>Begin Date</label>
-            <input type="date" value={modal.beginDate} onChange={e => set('beginDate', e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label>End Date</label>
-            <input type="date" value={modal.endDate} onChange={e => set('endDate', e.target.value)} />
-          </div>
-          <div className="form-group">
-            <label>Discount %</label>
-            <input type="number" min="0" max="100" step="0.01" value={modal.discountPercentage} onChange={e => set('discountPercentage', e.target.value)} />
-          </div>
+          <FormField label="Begin Date"   type="date"   value={modal.beginDate}          onChange={val => set('beginDate', val)} />
+          <FormField label="End Date"     type="date"   value={modal.endDate}            onChange={val => set('endDate', val)} />
+          <FormField label="Discount %"   type="number" value={modal.discountPercentage} onChange={val => set('discountPercentage', val)} min="0" max="100" step="0.01" />
         </Modal>
       )}
     </div>

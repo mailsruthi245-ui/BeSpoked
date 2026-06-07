@@ -4,6 +4,7 @@
 
 # Node
 node_modules/
+frontend/build/
 frontend/package-lock.json
 
 # Environment

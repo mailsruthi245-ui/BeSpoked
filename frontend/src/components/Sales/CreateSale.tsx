@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getProducts, getSalespersons, getCustomers, createSale } from '../../services/api';
 import { Product, Salesperson, Customer } from '../../types';
+import { useFetch } from '../../hooks/useFetch';
 
 interface SaleForm {
   productId: string;
@@ -12,24 +13,19 @@ interface SaleForm {
 
 export default function CreateSale() {
   const navigate = useNavigate();
-  const [products, setProducts]         = useState<Product[]>([]);
-  const [salespersons, setSalespersons] = useState<Salesperson[]>([]);
-  const [customers, setCustomers]       = useState<Customer[]>([]);
-  const [error, setError]               = useState('');
+  const { data: products }     = useFetch<Product[]>(getProducts);
+  const { data: salespersons } = useFetch<Salesperson[]>(getSalespersons);
+  const { data: customers }    = useFetch<Customer[]>(getCustomers);
+  const [error, setError] = useState('');
   const [form, setForm] = useState<SaleForm>({
     productId: '', salespersonId: '', customerId: '',
     salesDate: new Date().toISOString().split('T')[0],
   });
 
-  useEffect(() => {
-    Promise.all([getProducts(), getSalespersons(), getCustomers()])
-      .then(([p, s, c]) => { setProducts(p); setSalespersons(s); setCustomers(c); });
-  }, []);
-
   const set = (key: keyof SaleForm, val: string) => setForm(f => ({ ...f, [key]: val }));
 
-  const selectedProduct = products.find(p => p.id === +form.productId);
-  const activeSalespersons = salespersons.filter(s => !s.terminationDate);
+  const selectedProduct    = (products ?? []).find(p => p.id === +form.productId);
+  const activeSalespersons = (salespersons ?? []).filter(s => !s.terminationDate);
 
   const handleSubmit = async () => {
     if (!form.productId || !form.salespersonId || !form.customerId || !form.salesDate) {
@@ -59,7 +55,7 @@ export default function CreateSale() {
             <label>Product</label>
             <select value={form.productId} onChange={e => set('productId', e.target.value)}>
               <option value="">— Select a product —</option>
-              {products.map(p => (
+              {(products ?? []).map(p => (
                 <option key={p.id} value={p.id} disabled={p.qtyOnHand === 0}>
                   {p.name} — ${p.salePrice} ({p.qtyOnHand} in stock)
                 </option>
@@ -92,7 +88,7 @@ export default function CreateSale() {
             <label>Customer</label>
             <select value={form.customerId} onChange={e => set('customerId', e.target.value)}>
               <option value="">— Select —</option>
-              {customers.map(c => (
+              {(customers ?? []).map(c => (
                 <option key={c.id} value={c.id}>{c.firstName} {c.lastName}</option>
               ))}
             </select>
