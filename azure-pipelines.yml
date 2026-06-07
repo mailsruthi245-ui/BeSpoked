@@ -49,6 +49,19 @@ stages:
           vmImage: ubuntu-latest
         steps:
           - task: AzureCLI@2
+            displayName: Create Container Apps Environment
+            inputs:
+              azureSubscription: azure-bespoked
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                az extension add --name containerapp --upgrade -y
+                az containerapp env create \
+                  --name bespoked-env \
+                  --resource-group $(resourceGroup) \
+                  --location eastus 2>/dev/null || echo "Environment already exists"
+
+          - task: AzureCLI@2
             displayName: Deploy API to Container Apps
             inputs:
               azureSubscription: azure-bespoked
