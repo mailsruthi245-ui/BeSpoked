@@ -1,7 +1,7 @@
 using BeSpoked.Core.Entities;
 using Xunit;
 
-namespace BeSpoked.Tests;
+namespace BeSpoked.Tests.Domain;
 
 public class SaleComputedPropertyTests
 {
@@ -20,9 +20,9 @@ public class SaleComputedPropertyTests
     }
 
     [Theory]
-    [InlineData(1000, 0,  5,  50)]   // no discount, 5% commission
-    [InlineData(1000, 10, 5,  45)]   // 10% off → 900, 5% of 900 = 45
-    [InlineData(2000, 20, 7, 112)]   // 20% off → 1600, 7% of 1600 = 112
+    [InlineData(1000, 0,  5,  50)]
+    [InlineData(1000, 10, 5,  45)]
+    [InlineData(2000, 20, 7, 112)]
     public void Commission_IsCalculatedFromFinalPrice(
         decimal salePrice, decimal discount, decimal commissionPct, decimal expected)
     {

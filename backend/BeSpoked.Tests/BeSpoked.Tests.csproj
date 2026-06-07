@@ -25,6 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\BeSpoked.Core\BeSpoked.Core.csproj" />
     <ProjectReference Include="..\BeSpoked.API\BeSpoked.API.csproj" />
+    <ProjectReference Include="..\BeSpoked.Infrastructure\BeSpoked.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

@@ -8,7 +8,7 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
 
-namespace BeSpoked.Tests;
+namespace BeSpoked.Tests.Controllers;
 
 public class SalesControllerTests
 {
@@ -39,8 +39,6 @@ public class SalesControllerTests
         Phone = $"555-000{id}", StartDate = DateTime.Today.AddYears(-2), Manager = "Boss",
         TerminationDate = terminated ? DateTime.Today.AddMonths(-1) : null,
     };
-
-    // ── Create — validation tests ─────────────────────────────────────────────
 
     [Fact]
     public async Task Create_ReturnsNotFound_WhenProductDoesNotExist()
@@ -95,8 +93,6 @@ public class SalesControllerTests
 
         Assert.IsType<BadRequestObjectResult>(result);
     }
-
-    // ── QuarterlyReport — validation tests ───────────────────────────────────
 
     [Theory]
     [InlineData(0)]

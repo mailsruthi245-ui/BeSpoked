@@ -2,7 +2,7 @@ using BeSpoked.API.Services;
 using BeSpoked.API.Settings;
 using Xunit;
 
-namespace BeSpoked.Tests;
+namespace BeSpoked.Tests.Domain;
 
 public class BonusCalculatorTests
 {
