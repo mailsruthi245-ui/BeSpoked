@@ -20,6 +20,7 @@ builder.Services.Configure<QuarterlyBonusSettings>(
 
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<ISaleRepository, SaleRepository>();
+builder.Services.AddScoped<IDiscountRepository, DiscountRepository>();
 
 builder.Services.AddCors(options =>
     options.AddPolicy("ReactApp", policy =>
@@ -42,6 +43,7 @@ if (app.Environment.IsDevelopment())
         try { db.Database.Migrate(); break; }
         catch when (attempt < 10) { Thread.Sleep(3000); }
     }
+    await DataSeeder.SeedAsync(scope.ServiceProvider);
 }
 
 app.UseCors("ReactApp");

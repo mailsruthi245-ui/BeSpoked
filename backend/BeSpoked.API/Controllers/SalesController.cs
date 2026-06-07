@@ -3,9 +3,7 @@ using BeSpoked.API.Services;
 using BeSpoked.API.Settings;
 using BeSpoked.Core.Entities;
 using BeSpoked.Core.Interfaces;
-using BeSpoked.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 
 namespace BeSpoked.API.Controllers;
@@ -16,19 +14,22 @@ public class SalesController : ControllerBase
 {
     private readonly ISaleRepository _saleRepo;
     private readonly IRepository<Product> _productRepo;
-    private readonly AppDbContext _context;
+    private readonly IRepository<Salesperson> _salespersonRepo;
+    private readonly IDiscountRepository _discountRepo;
     private readonly QuarterlyBonusSettings _bonus;
 
     public SalesController(
         ISaleRepository saleRepo,
         IRepository<Product> productRepo,
-        AppDbContext context,
+        IRepository<Salesperson> salespersonRepo,
+        IDiscountRepository discountRepo,
         IOptions<QuarterlyBonusSettings> bonusOptions)
     {
-        _saleRepo    = saleRepo;
-        _productRepo = productRepo;
-        _context     = context;
-        _bonus       = bonusOptions.Value;
+        _saleRepo         = saleRepo;
+        _productRepo      = productRepo;
+        _salespersonRepo  = salespersonRepo;
+        _discountRepo     = discountRepo;
+        _bonus            = bonusOptions.Value;
     }
 
     [HttpGet]
@@ -48,15 +49,11 @@ public class SalesController : ControllerBase
         if (product is null) return NotFound("Product not found.");
         if (product.QtyOnHand <= 0) return BadRequest("Product is out of stock.");
 
-        var salesperson = await _context.Salespersons.FindAsync(request.SalespersonId);
+        var salesperson = await _salespersonRepo.GetByIdAsync(request.SalespersonId);
         if (salesperson is null) return NotFound("Salesperson not found.");
         if (salesperson.TerminationDate.HasValue) return BadRequest("Cannot create a sale for a terminated salesperson.");
 
-        var discount = await _context.Discounts
-            .Where(d => d.ProductId == request.ProductId
-                     && d.BeginDate <= request.SalesDate
-                     && d.EndDate >= request.SalesDate)
-            .FirstOrDefaultAsync();
+        var discount = await _discountRepo.GetActiveForProductAsync(request.ProductId, request.SalesDate);
 
         var sale = new Sale
         {
@@ -90,11 +87,11 @@ public class SalesController : ControllerBase
                 var totalCommission = g.Sum(s => s.Commission);
                 return new
                 {
-                    Salesperson = g.Key,
-                    TotalSales = g.Count(),
-                    TotalRevenue = g.Sum(s => s.FinalPrice),
+                    Salesperson     = g.Key,
+                    TotalSales      = g.Count(),
+                    TotalRevenue    = g.Sum(s => s.FinalPrice),
                     TotalCommission = totalCommission,
-                    Sales = g.ToList()
+                    Sales           = g.ToList()
                 };
             })
             .OrderByDescending(r => r.TotalCommission)

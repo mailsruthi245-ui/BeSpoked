@@ -1,8 +1,7 @@
 using BeSpoked.API.DTOs;
 using BeSpoked.Core.Entities;
-using BeSpoked.Infrastructure.Data;
+using BeSpoked.Core.Interfaces;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace BeSpoked.API.Controllers;
 
@@ -10,29 +9,18 @@ namespace BeSpoked.API.Controllers;
 [Route("api/[controller]")]
 public class DiscountsController : ControllerBase
 {
-    private readonly AppDbContext _context;
+    private readonly IDiscountRepository _repo;
 
-    public DiscountsController(AppDbContext context) => _context = context;
+    public DiscountsController(IDiscountRepository repo) => _repo = repo;
 
     [HttpGet]
-    public async Task<IActionResult> GetAll()
-    {
-        var discounts = await _context.Discounts
-            .Include(d => d.Product)
-            .OrderBy(d => d.Product.Name)
-            .ThenBy(d => d.BeginDate)
-            .ToListAsync();
-
-        return Ok(discounts.Select(ToDto));
-    }
+    public async Task<IActionResult> GetAll() =>
+        Ok((await _repo.GetAllWithProductAsync()).Select(ToDto));
 
     [HttpGet("{id}")]
     public async Task<IActionResult> GetById(int id)
     {
-        var discount = await _context.Discounts
-            .Include(d => d.Product)
-            .FirstOrDefaultAsync(d => d.Id == id);
-
+        var discount = await _repo.GetByIdWithProductAsync(id);
         return discount is null ? NotFound() : Ok(ToDto(discount));
     }
 
@@ -42,11 +30,9 @@ public class DiscountsController : ControllerBase
         if (discount.EndDate < discount.BeginDate)
             return BadRequest("End date must be on or after begin date.");
 
-        _context.Discounts.Add(discount);
-        await _context.SaveChangesAsync();
-
-        await _context.Entry(discount).Reference(d => d.Product).LoadAsync();
-        return CreatedAtAction(nameof(GetById), new { id = discount.Id }, ToDto(discount));
+        await _repo.AddAsync(discount);
+        var created = await _repo.GetByIdWithProductAsync(discount.Id);
+        return CreatedAtAction(nameof(GetById), new { id = discount.Id }, ToDto(created!));
     }
 
     [HttpPut("{id}")]
@@ -56,19 +42,17 @@ public class DiscountsController : ControllerBase
         if (discount.EndDate < discount.BeginDate)
             return BadRequest("End date must be on or after begin date.");
 
-        _context.Discounts.Update(discount);
-        await _context.SaveChangesAsync();
+        await _repo.UpdateAsync(discount);
         return NoContent();
     }
 
     [HttpDelete("{id}")]
     public async Task<IActionResult> Delete(int id)
     {
-        var discount = await _context.Discounts.FindAsync(id);
+        var discount = await _repo.GetByIdAsync(id);
         if (discount is null) return NotFound();
 
-        _context.Discounts.Remove(discount);
-        await _context.SaveChangesAsync();
+        await _repo.DeleteAsync(id);
         return NoContent();
     }
 

@@ -3,9 +3,7 @@ using BeSpoked.API.Services;
 using BeSpoked.API.Settings;
 using BeSpoked.Core.Entities;
 using BeSpoked.Core.Interfaces;
-using BeSpoked.Infrastructure.Data;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Moq;
 using Xunit;
@@ -14,23 +12,18 @@ namespace BeSpoked.Tests;
 
 public class SalesControllerTests
 {
-    // ── Helpers ───────────────────────────────────────────────────────────────
-
-    private static AppDbContext CreateContext() =>
-        new(new DbContextOptionsBuilder<AppDbContext>()
-            .UseInMemoryDatabase(Guid.NewGuid().ToString())
-            .Options);
-
     private static SalesController CreateController(
-        AppDbContext context,
         IRepository<Product>? productRepo = null,
+        IRepository<Salesperson>? salespersonRepo = null,
         ISaleRepository? saleRepo = null,
+        IDiscountRepository? discountRepo = null,
         QuarterlyBonusSettings? bonusSettings = null)
     {
         return new SalesController(
-            saleRepo   ?? new Mock<ISaleRepository>().Object,
-            productRepo ?? new Mock<IRepository<Product>>().Object,
-            context,
+            saleRepo        ?? new Mock<ISaleRepository>().Object,
+            productRepo     ?? new Mock<IRepository<Product>>().Object,
+            salespersonRepo ?? new Mock<IRepository<Salesperson>>().Object,
+            discountRepo    ?? new Mock<IDiscountRepository>().Object,
             Options.Create(bonusSettings ?? new QuarterlyBonusSettings { TopN = 1, BonusPercentage = 10 }));
     }
 
@@ -55,8 +48,7 @@ public class SalesControllerTests
         var productRepo = new Mock<IRepository<Product>>();
         productRepo.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync((Product?)null);
 
-        using var ctx = CreateContext();
-        var result = await CreateController(ctx, productRepo.Object)
+        var result = await CreateController(productRepo: productRepo.Object)
             .Create(new CreateSaleRequest(99, 1, 1, DateTime.Today));
 
         Assert.IsType<NotFoundObjectResult>(result);
@@ -68,8 +60,7 @@ public class SalesControllerTests
         var productRepo = new Mock<IRepository<Product>>();
         productRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(MakeProduct(1, qty: 0));
 
-        using var ctx = CreateContext();
-        var result = await CreateController(ctx, productRepo.Object)
+        var result = await CreateController(productRepo: productRepo.Object)
             .Create(new CreateSaleRequest(1, 1, 1, DateTime.Today));
 
         Assert.IsType<BadRequestObjectResult>(result);
@@ -81,8 +72,10 @@ public class SalesControllerTests
         var productRepo = new Mock<IRepository<Product>>();
         productRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(MakeProduct(1));
 
-        using var ctx = CreateContext(); // empty — no salespersons
-        var result = await CreateController(ctx, productRepo.Object)
+        var salespersonRepo = new Mock<IRepository<Salesperson>>();
+        salespersonRepo.Setup(r => r.GetByIdAsync(It.IsAny<int>())).ReturnsAsync((Salesperson?)null);
+
+        var result = await CreateController(productRepo: productRepo.Object, salespersonRepo: salespersonRepo.Object)
             .Create(new CreateSaleRequest(1, 99, 1, DateTime.Today));
 
         Assert.IsType<NotFoundObjectResult>(result);
@@ -94,11 +87,10 @@ public class SalesControllerTests
         var productRepo = new Mock<IRepository<Product>>();
         productRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(MakeProduct(1));
 
-        using var ctx = CreateContext();
-        ctx.Salespersons.Add(MakeSalesperson(1, terminated: true));
-        await ctx.SaveChangesAsync();
+        var salespersonRepo = new Mock<IRepository<Salesperson>>();
+        salespersonRepo.Setup(r => r.GetByIdAsync(1)).ReturnsAsync(MakeSalesperson(1, terminated: true));
 
-        var result = await CreateController(ctx, productRepo.Object)
+        var result = await CreateController(productRepo: productRepo.Object, salespersonRepo: salespersonRepo.Object)
             .Create(new CreateSaleRequest(1, 1, 1, DateTime.Today));
 
         Assert.IsType<BadRequestObjectResult>(result);
@@ -112,8 +104,7 @@ public class SalesControllerTests
     [InlineData(5)]
     public async Task QuarterlyReport_ReturnsBadRequest_WhenQuarterIsOutOfRange(int quarter)
     {
-        using var ctx = CreateContext();
-        var result = await CreateController(ctx).QuarterlyReport(2024, quarter);
+        var result = await CreateController().QuarterlyReport(2024, quarter);
         Assert.IsType<BadRequestObjectResult>(result);
     }
 
@@ -128,8 +119,7 @@ public class SalesControllerTests
         saleRepo.Setup(r => r.GetByQuarterAsync(It.IsAny<int>(), It.IsAny<int>()))
                 .ReturnsAsync(new List<Sale>());
 
-        using var ctx = CreateContext();
-        var result = await CreateController(ctx, saleRepo: saleRepo.Object)
+        var result = await CreateController(saleRepo: saleRepo.Object)
             .QuarterlyReport(2024, quarter);
 
         Assert.IsType<OkObjectResult>(result);
