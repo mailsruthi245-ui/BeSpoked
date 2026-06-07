@@ -66,6 +66,32 @@ stages:
                 fi
 
           - task: AzureCLI@2
+            displayName: Deploy SQL Server to Container Apps
+            inputs:
+              azureSubscription: azure-bespoked
+              scriptType: bash
+              scriptLocation: inlineScript
+              inlineScript: |
+                if ! az containerapp show --name bespoked-db --resource-group $(resourceGroup) &>/dev/null; then
+                  az containerapp create \
+                    --name bespoked-db \
+                    --resource-group $(resourceGroup) \
+                    --environment bespoked-env \
+                    --image mcr.microsoft.com/mssql/server:2022-latest \
+                    --target-port 1433 \
+                    --ingress internal \
+                    --transport tcp \
+                    --cpu 1.0 \
+                    --memory 2.0Gi \
+                    --min-replicas 1 \
+                    --max-replicas 1 \
+                    --env-vars \
+                      SA_PASSWORD="$(saPassword)" \
+                      ACCEPT_EULA="Y" \
+                      MSSQL_PID="Developer"
+                fi
+
+          - task: AzureCLI@2
             displayName: Deploy API to Container Apps
             inputs:
               azureSubscription: azure-bespoked
