@@ -9,6 +9,7 @@ variables:
   resourceGroup: bespoked-rg
   apiImageName: bespoked-api
   frontendImageName: bespoked-frontend
+  apiUrl: https://bespoked-api.ambitiousfield-a26c3bb2.eastus.azurecontainerapps.io
 
 stages:
   - stage: Build
@@ -128,5 +129,6 @@ stages:
                     --registry-username $(acrName) \
                     --registry-password "$ACR_PASS" \
                     --target-port 80 \
-                    --ingress external
+                    --ingress external \
+                    --env-vars API_URL=$(apiUrl)
                 fi
