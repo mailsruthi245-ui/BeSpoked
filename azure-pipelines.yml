@@ -118,7 +118,8 @@ stages:
                   az containerapp update \
                     --name bespoked-frontend \
                     --resource-group $(resourceGroup) \
-                    --image $(acrLoginServer)/$(frontendImageName):$(Build.BuildId)
+                    --image $(acrLoginServer)/$(frontendImageName):$(Build.BuildId) \
+                    --set-env-vars API_URL=$(apiUrl)
                 else
                   az containerapp create \
                     --name bespoked-frontend \
