@@ -102,6 +102,7 @@ export default function ProductList() {
                   ...editing,
                   [key]: type === 'number' ? +e.target.value : e.target.value,
                 })}
+                onFocus={e => { if (type === 'number' && +e.target.value === 0) e.target.select(); }}
               />
             </div>
           ))}
