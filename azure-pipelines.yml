@@ -73,6 +73,12 @@ stages:
               inlineScript: |
                 ACR_PASS=$(az acr credential show --name $(acrName) --query "passwords[0].value" -o tsv)
                 if az containerapp show --name bespoked-api --resource-group $(resourceGroup) &>/dev/null; then
+                  az containerapp registry set \
+                    --name bespoked-api \
+                    --resource-group $(resourceGroup) \
+                    --server $(acrLoginServer) \
+                    --username $(acrName) \
+                    --password "$ACR_PASS"
                   az containerapp update \
                     --name bespoked-api \
                     --resource-group $(resourceGroup) \
@@ -89,7 +95,7 @@ stages:
                     --target-port 8080 \
                     --ingress external \
                     --env-vars \
-                      ConnectionStrings__DefaultConnection="Server=db,1433;Database=BeSpoked;User Id=sa;Password=BeSpoked123!;TrustServerCertificate=True;" \
+                      ConnectionStrings__DefaultConnection="$(dbConnectionString)" \
                       ASPNETCORE_ENVIRONMENT=Development
                 fi
 
@@ -102,6 +108,12 @@ stages:
               inlineScript: |
                 ACR_PASS=$(az acr credential show --name $(acrName) --query "passwords[0].value" -o tsv)
                 if az containerapp show --name bespoked-frontend --resource-group $(resourceGroup) &>/dev/null; then
+                  az containerapp registry set \
+                    --name bespoked-frontend \
+                    --resource-group $(resourceGroup) \
+                    --server $(acrLoginServer) \
+                    --username $(acrName) \
+                    --password "$ACR_PASS"
                   az containerapp update \
                     --name bespoked-frontend \
                     --resource-group $(resourceGroup) \
