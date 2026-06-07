@@ -9,7 +9,7 @@ export function useFetch<T>(fetchFn: () => Promise<T>) {
   useEffect(() => {
     ref.current()
       .then(setData)
-      .catch(() => setError('Failed to load.'))
+      .catch((e: unknown) => setError(e instanceof Error ? e.message : 'Failed to load.'))
       .finally(() => setLoading(false));
   }, []);
 
