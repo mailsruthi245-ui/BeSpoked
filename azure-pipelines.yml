@@ -56,10 +56,13 @@ stages:
               scriptLocation: inlineScript
               inlineScript: |
                 az extension add --name containerapp --upgrade -y
-                az containerapp env create \
-                  --name bespoked-env \
-                  --resource-group $(resourceGroup) \
-                  --location eastus 2>/dev/null || echo "Environment already exists"
+                if ! az containerapp env show --name bespoked-env --resource-group $(resourceGroup) &>/dev/null; then
+                  az containerapp env create \
+                    --name bespoked-env \
+                    --resource-group $(resourceGroup) \
+                    --location eastus \
+                    --logs-destination none
+                fi
 
           - task: AzureCLI@2
             displayName: Deploy API to Container Apps
@@ -68,24 +71,25 @@ stages:
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
-                az containerapp create \
-                  --name bespoked-api \
-                  --resource-group $(resourceGroup) \
-                  --environment bespoked-env \
-                  --image $(acrLoginServer)/$(apiImageName):$(Build.BuildId) \
-                  --registry-server $(acrLoginServer) \
-                  --registry-identity system \
-                  --target-port 8080 \
-                  --ingress external \
-                  --env-vars \
-                    ConnectionStrings__DefaultConnection="Server=db,1433;Database=BeSpoked;User Id=sa;Password=BeSpoked123!;TrustServerCertificate=True;" \
-                    ASPNETCORE_ENVIRONMENT=Development \
-                  --query properties.configuration.ingress.fqdn \
-                  --output tsv || \
-                az containerapp update \
-                  --name bespoked-api \
-                  --resource-group $(resourceGroup) \
-                  --image $(acrLoginServer)/$(apiImageName):$(Build.BuildId)
+                if az containerapp show --name bespoked-api --resource-group $(resourceGroup) &>/dev/null; then
+                  az containerapp update \
+                    --name bespoked-api \
+                    --resource-group $(resourceGroup) \
+                    --image $(acrLoginServer)/$(apiImageName):$(Build.BuildId)
+                else
+                  az containerapp create \
+                    --name bespoked-api \
+                    --resource-group $(resourceGroup) \
+                    --environment bespoked-env \
+                    --image $(acrLoginServer)/$(apiImageName):$(Build.BuildId) \
+                    --registry-server $(acrLoginServer) \
+                    --registry-identity system \
+                    --target-port 8080 \
+                    --ingress external \
+                    --env-vars \
+                      ConnectionStrings__DefaultConnection="Server=db,1433;Database=BeSpoked;User Id=sa;Password=BeSpoked123!;TrustServerCertificate=True;" \
+                      ASPNETCORE_ENVIRONMENT=Development
+                fi
 
           - task: AzureCLI@2
             displayName: Deploy frontend to Container Apps
@@ -94,18 +98,19 @@ stages:
               scriptType: bash
               scriptLocation: inlineScript
               inlineScript: |
-                az containerapp create \
-                  --name bespoked-frontend \
-                  --resource-group $(resourceGroup) \
-                  --environment bespoked-env \
-                  --image $(acrLoginServer)/$(frontendImageName):$(Build.BuildId) \
-                  --registry-server $(acrLoginServer) \
-                  --registry-identity system \
-                  --target-port 80 \
-                  --ingress external \
-                  --query properties.configuration.ingress.fqdn \
-                  --output tsv || \
-                az containerapp update \
-                  --name bespoked-frontend \
-                  --resource-group $(resourceGroup) \
-                  --image $(acrLoginServer)/$(frontendImageName):$(Build.BuildId)
+                if az containerapp show --name bespoked-frontend --resource-group $(resourceGroup) &>/dev/null; then
+                  az containerapp update \
+                    --name bespoked-frontend \
+                    --resource-group $(resourceGroup) \
+                    --image $(acrLoginServer)/$(frontendImageName):$(Build.BuildId)
+                else
+                  az containerapp create \
+                    --name bespoked-frontend \
+                    --resource-group $(resourceGroup) \
+                    --environment bespoked-env \
+                    --image $(acrLoginServer)/$(frontendImageName):$(Build.BuildId) \
+                    --registry-server $(acrLoginServer) \
+                    --registry-identity system \
+                    --target-port 80 \
+                    --ingress external
+                fi
