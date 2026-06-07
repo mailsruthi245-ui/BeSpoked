@@ -16,7 +16,7 @@ public class Repository<T> : IRepository<T> where T : class
     }
 
     public async Task<IEnumerable<T>> GetAllAsync() =>
-        await _dbSet.ToListAsync();
+        await _dbSet.AsNoTracking().ToListAsync();
 
     public async Task<T?> GetByIdAsync(int id) =>
         await _dbSet.FindAsync(id);
