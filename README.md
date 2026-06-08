@@ -82,24 +82,23 @@ To wipe the database too: `docker compose down -v`
 
 ### Option 2 — Run locally
 
-**Prerequisites:** .NET 8 SDK, SQL Server, Node.js 18+
-
-Update the connection string in `backend/BeSpoked.API/appsettings.json` to match your SQL Server instance, then:
+**Prerequisites:** .NET 8 SDK, Node.js 18+, Docker Desktop
 
 ```bash
-# Terminal 1 — API
-cd backend/BeSpoked.API
-dotnet run
-# Runs on http://localhost:5001
+# Step 1 — Start SQL Server
+docker run -e "ACCEPT_EULA=Y" -e "SA_PASSWORD=BeSpoked123!" -p 1433:1433 -d mcr.microsoft.com/mssql/server:2022-latest
 
-# Terminal 2 — Frontend
+# Step 2 — Start the API (new terminal)
+cd backend/BeSpoked.API
+ASPNETCORE_ENVIRONMENT=Development dotnet run
+
+# Step 3 — Start the frontend (new terminal)
 cd frontend
 npm install
 npm start
-# Runs on http://localhost:3000
 ```
 
-Migrations and seed data are applied automatically on first run.
+Open http://localhost:3000. Migrations and seed data run automatically on first startup.
 
 ---
 
