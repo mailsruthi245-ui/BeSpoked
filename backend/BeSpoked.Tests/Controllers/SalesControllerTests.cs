@@ -49,7 +49,7 @@ public class SalesControllerTests
         var result = await CreateController(productRepo: productRepo.Object)
             .Create(new CreateSaleRequest(99, 1, 1, DateTime.Today));
 
-        Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal(404, Assert.IsType<ObjectResult>(result).StatusCode);
     }
 
     [Fact]
@@ -61,7 +61,7 @@ public class SalesControllerTests
         var result = await CreateController(productRepo: productRepo.Object)
             .Create(new CreateSaleRequest(1, 1, 1, DateTime.Today));
 
-        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(400, Assert.IsType<ObjectResult>(result).StatusCode);
     }
 
     [Fact]
@@ -76,7 +76,7 @@ public class SalesControllerTests
         var result = await CreateController(productRepo: productRepo.Object, salespersonRepo: salespersonRepo.Object)
             .Create(new CreateSaleRequest(1, 99, 1, DateTime.Today));
 
-        Assert.IsType<NotFoundObjectResult>(result);
+        Assert.Equal(404, Assert.IsType<ObjectResult>(result).StatusCode);
     }
 
     [Fact]
@@ -91,7 +91,7 @@ public class SalesControllerTests
         var result = await CreateController(productRepo: productRepo.Object, salespersonRepo: salespersonRepo.Object)
             .Create(new CreateSaleRequest(1, 1, 1, DateTime.Today));
 
-        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(400, Assert.IsType<ObjectResult>(result).StatusCode);
     }
 
     [Fact]
@@ -129,7 +129,7 @@ public class SalesControllerTests
     public async Task QuarterlyReport_ReturnsBadRequest_WhenQuarterIsOutOfRange(int quarter)
     {
         var result = await CreateController().QuarterlyReport(2024, quarter);
-        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(400, Assert.IsType<ObjectResult>(result).StatusCode);
     }
 
     [Theory]

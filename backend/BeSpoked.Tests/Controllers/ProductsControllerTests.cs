@@ -74,7 +74,7 @@ public class ProductsControllerTests
 
         var result = await new ProductsController(repo.Object).Create(MakeProduct(0));
 
-        Assert.IsType<ConflictObjectResult>(result);
+        Assert.Equal(409, Assert.IsType<ObjectResult>(result).StatusCode);
     }
 
     [Fact]
@@ -106,6 +106,6 @@ public class ProductsControllerTests
 
         var result = await new ProductsController(repo.Object).Update(1, MakeProduct(1));
 
-        Assert.IsType<ConflictObjectResult>(result);
+        Assert.Equal(409, Assert.IsType<ObjectResult>(result).StatusCode);
     }
 }

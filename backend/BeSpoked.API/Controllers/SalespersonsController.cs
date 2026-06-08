@@ -33,7 +33,7 @@ public class SalespersonsController : ControllerBase
         var all = await _repo.GetAllAsync();
         if (all.Any(s => string.Equals(s.FirstName, salesperson.FirstName, StringComparison.OrdinalIgnoreCase)
                       && string.Equals(s.LastName,  salesperson.LastName,  StringComparison.OrdinalIgnoreCase)))
-            return Conflict($"A salesperson named {salesperson.FirstName} {salesperson.LastName} already exists.");
+            return Problem(detail: $"A salesperson named {salesperson.FirstName} {salesperson.LastName} already exists.", statusCode: StatusCodes.Status409Conflict);
 
         var created = await _repo.AddAsync(salesperson);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, ToDto(created));
@@ -48,7 +48,7 @@ public class SalespersonsController : ControllerBase
         if (all.Any(s => s.Id != id
                       && string.Equals(s.FirstName, salesperson.FirstName, StringComparison.OrdinalIgnoreCase)
                       && string.Equals(s.LastName,  salesperson.LastName,  StringComparison.OrdinalIgnoreCase)))
-            return Conflict($"A salesperson named {salesperson.FirstName} {salesperson.LastName} already exists.");
+            return Problem(detail: $"A salesperson named {salesperson.FirstName} {salesperson.LastName} already exists.", statusCode: StatusCodes.Status409Conflict);
 
         await _repo.UpdateAsync(salesperson);
         return NoContent();

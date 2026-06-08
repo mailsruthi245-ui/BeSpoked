@@ -38,7 +38,7 @@ public class ProductsController : ControllerBase
         }
         catch (DbUpdateException)
         {
-            return Conflict("A product with that name and manufacturer already exists.");
+            return Problem(detail: "A product with that name and manufacturer already exists.", statusCode: StatusCodes.Status409Conflict);
         }
     }
 
@@ -53,7 +53,7 @@ public class ProductsController : ControllerBase
         }
         catch (DbUpdateException)
         {
-            return Conflict("A product with that name and manufacturer already exists.");
+            return Problem(detail: "A product with that name and manufacturer already exists.", statusCode: StatusCodes.Status409Conflict);
         }
     }
 

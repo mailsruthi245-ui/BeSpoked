@@ -1,3 +1,4 @@
+using BeSpoked.API;
 using BeSpoked.API.Settings;
 using BeSpoked.Core.Interfaces;
 using BeSpoked.Infrastructure.Data;
@@ -22,6 +23,9 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<ISaleRepository, SaleRepository>();
 builder.Services.AddScoped<IDiscountRepository, DiscountRepository>();
 
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
 builder.Services.AddCors(options =>
     options.AddPolicy("ReactApp", policy =>
         policy.WithOrigins("http://localhost:3000")
@@ -30,20 +34,7 @@ builder.Services.AddCors(options =>
 
 var app = builder.Build();
 
-app.UseExceptionHandler(errApp =>
-    errApp.Run(async ctx =>
-    {
-        var ex = ctx.Features.Get<Microsoft.AspNetCore.Diagnostics.IExceptionHandlerFeature>()?.Error;
-        var logger = ctx.RequestServices
-                        .GetRequiredService<ILoggerFactory>()
-                        .CreateLogger("GlobalExceptionHandler");
-        logger.LogError(ex, "Unhandled exception on {Method} {Path}",
-                        ctx.Request.Method, ctx.Request.Path);
-
-        ctx.Response.StatusCode = StatusCodes.Status500InternalServerError;
-        ctx.Response.ContentType = "application/json";
-        await ctx.Response.WriteAsJsonAsync(new { error = "An unexpected error occurred." });
-    }));
+app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {

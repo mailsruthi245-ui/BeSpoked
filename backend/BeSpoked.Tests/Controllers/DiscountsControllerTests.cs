@@ -60,7 +60,7 @@ public class DiscountsControllerTests
         var result = await new DiscountsController(new Mock<IDiscountRepository>().Object)
             .Create(new DiscountRequest(1, End, Begin, 10));
 
-        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(400, Assert.IsType<ObjectResult>(result).StatusCode);
     }
 
     [Fact]
@@ -83,7 +83,7 @@ public class DiscountsControllerTests
         var result = await new DiscountsController(new Mock<IDiscountRepository>().Object)
             .Update(1, new DiscountRequest(1, End, Begin, 10));
 
-        Assert.IsType<BadRequestObjectResult>(result);
+        Assert.Equal(400, Assert.IsType<ObjectResult>(result).StatusCode);
     }
 
     [Fact]

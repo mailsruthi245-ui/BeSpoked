@@ -12,8 +12,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   });
   if (!res.ok) {
     const raw = await res.text();
-    const msg = raw.startsWith('"') ? JSON.parse(raw) : raw;
-    throw new Error(msg || `HTTP ${res.status}`);
+    let msg = `HTTP ${res.status}`;
+    try {
+      const json = JSON.parse(raw);
+      msg = json.detail ?? json.error ?? json.title ?? msg;
+    } catch {
+      msg = raw || msg;
+    }
+    throw new Error(msg);
   }
   if (res.status === 204) return null as unknown as T;
   return res.json() as Promise<T>;

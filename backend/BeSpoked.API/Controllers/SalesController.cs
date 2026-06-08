@@ -46,13 +46,13 @@ public class SalesController : ControllerBase
     public async Task<IActionResult> Create(CreateSaleRequest request)
     {
         var product = await _productRepo.GetByIdAsync(request.ProductId);
-        if (product is null) return NotFound("Product not found.");
-        if (product.QtyOnHand <= 0) return BadRequest("Product is out of stock.");
+        if (product is null) return Problem(detail: "Product not found.", statusCode: StatusCodes.Status404NotFound);
+        if (product.QtyOnHand <= 0) return Problem(detail: "Product is out of stock.", statusCode: StatusCodes.Status400BadRequest);
 
         var salesperson = await _salespersonRepo.GetByIdAsync(request.SalespersonId);
-        if (salesperson is null) return NotFound("Salesperson not found.");
+        if (salesperson is null) return Problem(detail: "Salesperson not found.", statusCode: StatusCodes.Status404NotFound);
         if (salesperson.TerminationDate.HasValue && salesperson.TerminationDate.Value.Date <= DateTime.Today)
-            return BadRequest("Cannot create a sale for a terminated salesperson.");
+            return Problem(detail: "Cannot create a sale for a terminated salesperson.", statusCode: StatusCodes.Status400BadRequest);
 
         var discount = await _discountRepo.GetActiveForProductAsync(request.ProductId, request.SalesDate);
 
@@ -77,7 +77,7 @@ public class SalesController : ControllerBase
     [HttpGet("report")]
     public async Task<IActionResult> QuarterlyReport([FromQuery] int year, [FromQuery] int quarter)
     {
-        if (quarter < 1 || quarter > 4) return BadRequest("Quarter must be 1-4.");
+        if (quarter < 1 || quarter > 4) return Problem(detail: "Quarter must be 1-4.", statusCode: StatusCodes.Status400BadRequest);
 
         var sales = await _saleRepo.GetByQuarterAsync(year, quarter);
 

@@ -28,7 +28,7 @@ public class DiscountsController : ControllerBase
     public async Task<IActionResult> Create(DiscountRequest request)
     {
         if (request.EndDate < request.BeginDate)
-            return BadRequest("End date must be on or after begin date.");
+            return Problem(detail: "End date must be on or after begin date.", statusCode: StatusCodes.Status400BadRequest);
 
         var discount = new Discount
         {
@@ -47,7 +47,7 @@ public class DiscountsController : ControllerBase
     public async Task<IActionResult> Update(int id, DiscountRequest request)
     {
         if (request.EndDate < request.BeginDate)
-            return BadRequest("End date must be on or after begin date.");
+            return Problem(detail: "End date must be on or after begin date.", statusCode: StatusCodes.Status400BadRequest);
 
         var discount = new Discount
         {

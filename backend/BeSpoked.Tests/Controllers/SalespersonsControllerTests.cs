@@ -61,7 +61,7 @@ public class SalespersonsControllerTests
         var result = await new SalespersonsController(repo.Object)
             .Create(MakeSalesperson(0, "alice", "CHEN"));
 
-        Assert.IsType<ConflictObjectResult>(result);
+        Assert.Equal(409, Assert.IsType<ObjectResult>(result).StatusCode);
     }
 
     [Fact]
@@ -99,7 +99,7 @@ public class SalespersonsControllerTests
         var result = await new SalespersonsController(repo.Object)
             .Update(1, MakeSalesperson(1, "alice", "CHEN"));
 
-        Assert.IsType<ConflictObjectResult>(result);
+        Assert.Equal(409, Assert.IsType<ObjectResult>(result).StatusCode);
     }
 
     [Fact]
