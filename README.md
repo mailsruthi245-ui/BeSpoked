@@ -72,8 +72,8 @@ That's it. Docker will:
 | Service  | URL                        |
 |----------|----------------------------|
 | Frontend | http://localhost:3000      |
-| API      | http://localhost:5000      |
-| Swagger  | http://localhost:5000/swagger |
+| API      | http://localhost:5001      |
+| Swagger  | http://localhost:5001/swagger |
 
 To stop: `docker compose down`
 To wipe the database too: `docker compose down -v`
@@ -90,7 +90,7 @@ Update the connection string in `backend/BeSpoked.API/appsettings.json` to match
 # Terminal 1 — API
 cd backend/BeSpoked.API
 dotnet run
-# Runs on http://localhost:5000
+# Runs on http://localhost:5001
 
 # Terminal 2 — Frontend
 cd frontend
